@@ -387,12 +387,12 @@ privacyAccept.addEventListener('click', () => {
   showAnalysisLanguageDialog();
 });
 
-analysisLanguageAccept.addEventListener('click', () => {
+analysisLanguageAccept.addEventListener('click', async () => {
   const selected = document.querySelector('input[name="analysisLanguage"]:checked');
   analysisLanguage = selected?.value === 'en' ? 'en' : 'es';
   analysisLanguageConfirmed = true;
   analysisLanguageDialog.hidden = true;
-  if (cloudflareFreeEdition) showExecutionModeDialog();
+  if (cloudflareFreeEdition) await chooseAvailableEngine();
   else finishIntroduction();
 });
 
@@ -628,6 +628,20 @@ function showExecutionModeDialog() {
     : 'First time: download and open the Windows application. Chrome will then request permission to detect it. It does not connect to other devices on your network.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
+}
+
+async function chooseAvailableEngine() {
+  // This follows the participant's simplest path: when the portable application
+  // is already open, use it immediately. The fast/full choice is only needed
+  // when no local engine is available.
+  const base = await findLocalEngine();
+  if (base) {
+    localEngineBase = base;
+    executionMode = 'local';
+    finishIntroduction();
+    return;
+  }
+  showExecutionModeDialog();
 }
 
 function finishIntroduction() {
