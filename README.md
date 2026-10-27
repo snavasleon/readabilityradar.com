@@ -57,3 +57,6 @@ performs the readability calculation, visualisation and PDF generation. It does
 not store URLs, page text or reports. The public edition explores up to 30
 static-HTML pages per domain; the local edition remains the full-capacity option
 for large crawls and JavaScript-rendered pages.
+
+The current public deployment and remaining hardening tasks are recorded in
+[DEPLOYMENT.md](DEPLOYMENT.md).
