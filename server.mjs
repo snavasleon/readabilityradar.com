@@ -115,7 +115,8 @@ const server = createServer(async (request, response) => {
 });
 
 const requestedPort = Number(readArg('--port') ?? process.env.PORT ?? 8787);
-listen(requestedPort);
+const portableWindowsApp = Boolean(process.pkg);
+listen(requestedPort, requestedPort === 8787 ? [55481] : []);
 
 async function loadSyllableValidation(language) {
   try {
@@ -129,10 +130,17 @@ async function loadSyllableValidation(language) {
   }
 }
 
-function listen(port) {
+function listen(port, fallbackPorts = []) {
   server.once('error', (error) => {
-    if (error && error.code === 'EADDRINUSE' && port !== 0) {
-      listen(0);
+    if (error && error.code === 'EADDRINUSE' && fallbackPorts.length) {
+      const [nextPort, ...remainingPorts] = fallbackPorts;
+      console.log(`Port ${port} is in use; trying ${nextPort}.`);
+      listen(nextPort, remainingPorts);
+      return;
+    }
+    if (error && error.code === 'EADDRINUSE') {
+      console.error(`The local engine cannot start because port ${port} is already in use. Close the other Web Readability Radar window and try again.`);
+      process.exit(1);
       return;
     }
     console.error(error);
@@ -148,7 +156,9 @@ function listen(port) {
     console.log(`Opened at: ${localUrl}`);
     console.log('Press Ctrl+C to close the server.');
     console.log('');
-    if (process.argv.includes('--open')) {
+    if (portableWindowsApp) {
+      openBrowser('https://readabilityradar.com');
+    } else if (process.argv.includes('--open')) {
       openBrowser(localUrl);
     }
   });
