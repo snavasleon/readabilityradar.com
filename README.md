@@ -48,3 +48,12 @@ Spanish processing follows the supplied INFLESZ operational documentation for se
 ## Privacy
 
 Analysis runs on your computer. Entered URLs are requested from your computer. Dynamic pages may open a local headless browser. Results are not automatically stored on an external server. Stop the local server with Control+C.
+
+## Public Cloudflare edition
+
+The `cloudflare/` folder provides a no-cost public edition. Cloudflare serves
+the interface and safely retrieves public HTML, while the visitor's browser
+performs the readability calculation, visualisation and PDF generation. It does
+not store URLs, page text or reports. The public edition explores up to 30
+static-HTML pages per domain; the local edition remains the full-capacity option
+for large crawls and JavaScript-rendered pages.

@@ -1,15 +1,18 @@
 # Online free edition
 
-This folder deploys the public interface and its API as one Cloudflare Worker.
-It is intentionally separate from the local server:
+This folder deploys the public interface and its guarded fetch API as one
+Cloudflare Worker. Readability analysis, charts and report generation happen
+inside each visitor's browser, rather than in the Worker. This keeps the public
+edition on the free plan and avoids storing submitted URLs, page text or reports.
 
-- no account, URL, page text or report is persisted;
-- local HTML files and browser-based JavaScript rendering are only available in
-  the local edition;
-- a request has a hard budget of 45 external fetches, below Cloudflare Workers
-  Free's 50 external-subrequest ceiling;
-- domain coverage is reported in each result. The worker stops rather than
-  silently exceeding the free tier.
+- the Worker serves static assets, a cached syllable dictionary and `/api/fetch`;
+- `/api/fetch` accepts only public HTTP(S) URLs, blocks local/private addresses,
+  credentials and sensitive ports, follows at most four redirects, and limits
+  HTML size and response time;
+- the browser can process up to 30 static-HTML pages per domain in one run;
+- local HTML uploads are analyzed in the browser and never leave the device;
+- dynamic rendering is an optional future enhancement using Cloudflare Browser
+  Run; static HTML remains the safe no-cost fallback.
 
 ## Deploy
 

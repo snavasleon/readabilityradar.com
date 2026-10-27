@@ -1,3 +1,4 @@
+import { analyzeOnline } from './online-analyzer.js';
 
 const STRINGS = {
   es: {
@@ -300,7 +301,10 @@ let language = detectBrowserLanguage();
 let analysisLanguage = language;
 // The Cloudflare edition has no durable job store. It returns one bounded
 // analysis response directly; the local server retains its progress polling.
-const cloudflareFreeEdition = /(?:^|\.)workers\.dev$/i.test(window.location.hostname);
+// The local server retains its complete Node/browser workflow. Any deployed
+// version calculates in the visitor's browser and uses the Worker only as a
+// guarded HTML proxy.
+const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let scope = 'domain';
@@ -515,6 +519,19 @@ function applyLanguage() {
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
   });
+  if (cloudflareFreeEdition) {
+    const limit = document.querySelector('[data-i18n="portableLimit"]');
+    const help = document.querySelector('[data-i18n-title="settingsHelp"]');
+    if (limit) limit.textContent = language === 'es'
+      ? 'Online: Rápido muestra una selección de fragmentos; Completo analiza hasta 30 páginas detectadas mediante HTML estático. El cálculo se hace en tu navegador.'
+      : 'Online: Fast shows a selection of fragments; Complete analyzes up to 30 pages found through static HTML. Calculation happens in your browser.';
+    if (help) {
+      const text = language === 'es'
+        ? 'La edición online explora hasta 30 páginas enlazadas desde la página inicial. No guarda el texto ni los resultados. Las páginas que cargan contenido solo con JavaScript pueden mostrar una cobertura parcial.'
+        : 'The online edition explores up to 30 pages linked from the starting page. It does not store text or results. Pages that load content only with JavaScript may have partial coverage.';
+      help.dataset.title = text; help.setAttribute('aria-label', text);
+    }
+  }
   syncIntensityField();
   syncScope();
 }
@@ -533,6 +550,11 @@ function showPrivacyDialog() {
   document.querySelector('#privacyBody').innerHTML = isSpanish
     ? '<p>Esta herramienta analiza la dificultad lingüística de páginas web y archivos HTML para localizar contenido que conviene revisar. Antes de elegir el idioma del análisis, te informamos de cómo se tratan los datos.</p><h3>Privacidad y protección de datos</h3><p>Web Readability Radar procesa las URLs, el HTML local y los resultados únicamente para realizar el análisis solicitado.</p><ul><li>No crea cuentas ni perfiles, no utiliza publicidad ni cookies de seguimiento y no guarda resultados en una base de datos.</li><li>Los datos se mantienen temporalmente en memoria durante la ejecución y se eliminan al entregar el resultado. Las páginas solicitadas se consultan directamente desde este equipo.</li><li>No introduzcas información personal, confidencial o de terceros sin una base legítima para tratarla.</li></ul><p>Este aviso informa del tratamiento mínimo necesario conforme a los principios de transparencia y minimización. No sustituye la política de privacidad de la organización que use la herramienta.</p>'
     : '<p>This tool analyzes the linguistic difficulty of web pages and HTML files to identify content that may need review. Before you choose the analysis language, it explains how data is handled.</p><h3>Privacy and data protection</h3><p>Web Readability Radar processes URLs, local HTML, and results only to perform the analysis you request.</p><ul><li>It does not create accounts or profiles, use advertising or tracking cookies, or save results in a database.</li><li>Data is held temporarily in memory while the analysis runs and is removed after the result is delivered. Requested pages are fetched directly from this computer.</li><li>Do not submit personal, confidential, or third-party information unless you have a lawful basis to process it.</li></ul><p>This notice describes the minimum processing needed under transparency and data-minimisation principles. It does not replace the privacy policy of the organisation using this tool.</p>';
+  if (cloudflareFreeEdition) {
+    document.querySelector('#privacyBody').innerHTML = isSpanish
+      ? '<p>Esta herramienta analiza la dificultad lingüística de páginas web y archivos HTML para localizar contenido que conviene revisar.</p><h3>Privacidad y protección de datos</h3><p>Los cálculos, gráficos, informes y PDF se realizan en tu navegador. Para obtener una página web, se envía su URL al proxy de Cloudflare, que descarga temporalmente el HTML y lo devuelve a este navegador. No se guarda una base de datos de URLs, textos ni resultados.</p><ul><li>No crea cuentas ni perfiles, ni utiliza publicidad o cookies de seguimiento.</li><li>El archivo HTML que subas se procesa en este navegador y no se envía al servidor.</li><li>No introduzcas información personal, confidencial o de terceros sin una base legítima para tratarla.</li></ul><p>Este aviso informa del tratamiento mínimo necesario conforme a los principios de transparencia y minimización.</p>'
+      : '<p>This tool analyzes the linguistic difficulty of web pages and HTML files to identify content that may need review.</p><h3>Privacy and data protection</h3><p>Calculations, charts, reports and PDFs run in your browser. To retrieve a web page, its URL is sent to a Cloudflare proxy, which temporarily downloads the HTML and returns it to this browser. No database of URLs, texts or results is stored.</p><ul><li>It does not create accounts or profiles, or use advertising or tracking cookies.</li><li>An uploaded HTML file is processed in this browser and is not sent to the server.</li><li>Do not submit personal, confidential, or third-party information unless you have a lawful basis to process it.</li></ul><p>This notice describes the minimum processing needed under transparency and data-minimisation principles.</p>';
+  }
   privacyAccept.textContent = isSpanish ? 'Entendido, continuar' : 'I understand, continue';
   privacyDialog.hidden = false;
   privacyAccept.focus();
@@ -564,8 +586,13 @@ function completeSampleLabel() {
 function syncIntensityField() {
   if (cloudflareFreeEdition) {
     maxPagesInput.type = 'number';
-    maxPagesInput.value = '1';
-    maxPagesInput.disabled = true;
+    if (intensity === 'complete') {
+      maxPagesInput.value = '30';
+      maxPagesInput.disabled = true;
+    } else {
+      if (!/^\d+$/.test(maxPagesInput.value) || Number(maxPagesInput.value) > 30) maxPagesInput.value = '12';
+      maxPagesInput.disabled = analysisRunning || scope === 'page';
+    }
     return;
   }
   if (intensity === 'complete') {
@@ -624,47 +651,52 @@ async function runAnalysis(estimateOnly) {
   try {
     const localHtml = await readLocalHtml();
     localSourceText = '';
-    const response = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        language: analysisLanguage,
-        scope,
-        input: inputSource === 'html' ? '' : validateWebInput(inputUrls.value),
-        exactUrls: scope === 'domain' ? exactUrls.value : '',
-        includeRelatedSubdomains: scope === 'domain' && includeSubdomains.checked,
-        estimateOnly,
-        maxPages: cloudflareFreeEdition || scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value),
-        samplingMode: cloudflareFreeEdition ? 'all' : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'),
-        fragmentLimit: intensity === 'fast' ? 'top10' : null,
-        minWords: document.querySelector('#minWords').value,
-        minFragmentWords: document.querySelector('#minFragmentWords').value,
-        htmlInput: localHtml?.content ?? '',
-        htmlName: localHtml?.name ?? '',
-        background: !cloudflareFreeEdition,
-      }),
-    });
-    const started = await response.json();
-    if (!response.ok || started.error) throw new Error(started.error || dictionary.error);
-    let payload = cloudflareFreeEdition ? started : null;
-    while (!payload) {
-      if (!started.jobId) throw new Error(dictionary.error);
-      await new Promise((resolve) => window.setTimeout(resolve, 750));
-      const statusResponse = await fetch(`/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`, { cache: 'no-store' });
-      const status = await statusResponse.json();
-      if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
-      const progressTarget = results.querySelector('.loading-progress');
-      if (progressTarget) {
-        if (status.progress?.phase === 'analysis' && Number.isFinite(status.progress.total)) {
-          progressTarget.textContent = language === 'es'
-            ? `Páginas procesadas: ${status.progress.completed} de ${status.progress.total}`
-            : `Pages processed: ${status.progress.completed} of ${status.progress.total}`;
-        } else {
-          progressTarget.textContent = language === 'es' ? 'Descubriendo páginas y enlaces…' : 'Discovering pages and links…';
+    const requestBody = {
+      language: analysisLanguage,
+      scope,
+      input: inputSource === 'html' ? '' : validateWebInput(inputUrls.value),
+      exactUrls: scope === 'domain' ? exactUrls.value : '',
+      includeRelatedSubdomains: scope === 'domain' && includeSubdomains.checked,
+      estimateOnly,
+      maxPages: cloudflareFreeEdition ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value)),
+      samplingMode: cloudflareFreeEdition ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'),
+      fragmentLimit: intensity === 'fast' ? 'top10' : null,
+      minWords: document.querySelector('#minWords').value,
+      minFragmentWords: document.querySelector('#minFragmentWords').value,
+      htmlInput: localHtml?.content ?? '',
+      htmlName: localHtml?.name ?? '',
+      background: !cloudflareFreeEdition,
+    };
+    let payload;
+    if (cloudflareFreeEdition) {
+      payload = await analyzeOnline(requestBody, (phase, completed, total) => {
+        const progressTarget = results.querySelector('.loading-progress');
+        if (!progressTarget) return;
+        progressTarget.textContent = phase === 'analysis' && Number.isFinite(total)
+          ? (language === 'es' ? `Páginas procesadas: ${completed} de ${total}` : `Pages processed: ${completed} of ${total}`)
+          : (language === 'es' ? 'Descubriendo páginas y enlaces…' : 'Discovering pages and links…');
+      });
+    } else {
+      const response = await fetch('/api/analyze', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody),
+      });
+      const started = await response.json();
+      if (!response.ok || started.error) throw new Error(started.error || dictionary.error);
+      while (!payload) {
+        if (!started.jobId) throw new Error(dictionary.error);
+        await new Promise((resolve) => window.setTimeout(resolve, 750));
+        const statusResponse = await fetch(`/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`, { cache: 'no-store' });
+        const status = await statusResponse.json();
+        if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
+        const progressTarget = results.querySelector('.loading-progress');
+        if (progressTarget) {
+          progressTarget.textContent = status.progress?.phase === 'analysis' && Number.isFinite(status.progress.total)
+            ? (language === 'es' ? `Páginas procesadas: ${status.progress.completed} de ${status.progress.total}` : `Pages processed: ${status.progress.completed} of ${status.progress.total}`)
+            : (language === 'es' ? 'Descubriendo páginas y enlaces…' : 'Discovering pages and links…');
         }
+        if (status.state === 'error') throw new Error(status.error || dictionary.error);
+        if (status.state === 'complete') payload = status.result;
       }
-      if (status.state === 'error') throw new Error(status.error || dictionary.error);
-      if (status.state === 'complete') payload = status.result;
     }
     lastResult = payload;
     localSourceText = payload.localSourceText ?? '';
@@ -870,7 +902,7 @@ function renderPanel(dictionary) {
           </article>
           `).join('')}
         </div>
-        ${coverage ? `<p class="reason">${coverage.platform === 'cloudflare_workers_free' ? (language === 'es' ? 'Edición online gratuita: se analiza una página por solicitud y se utiliza una muestra parcial del HTML cuando es necesario para respetar los límites de Cloudflare.' : 'Free online edition: one page is analyzed per request and a partial HTML sample is used where needed to stay within Cloudflare limits.') : coverage.maxCrawlDepth === null ? (language === 'es' ? `Modo completo: se recorren todos los enlaces internos detectables y las URLs de sitemap, hasta ${coverage.maxCandidates} URLs candidatas.` : `Complete mode: all detectable internal links and sitemap URLs are traversed, up to ${coverage.maxCandidates} candidate URLs.`) : (language === 'es' ? `Modo rápido: hasta ${coverage.maxCrawlDepth} niveles y ${coverage.maxCrawlPagesPerDomain} páginas exploradas por dominio. Sitemaps y candidatas: hasta ${coverage.maxCandidates}.` : `Fast mode: up to ${coverage.maxCrawlDepth} link levels and ${coverage.maxCrawlPagesPerDomain} crawled pages per domain. Sitemaps and candidates: up to ${coverage.maxCandidates}.`)}</p>` : ''}
+        ${coverage ? `<p class="reason">${coverage.platform === 'browser_client_free' ? (language === 'es' ? `Edición online gratuita: el texto, las métricas, los gráficos y el informe se procesan en este navegador. Se exploran hasta ${coverage.maxPages} páginas con HTML estático; no se guarda el contenido.` : `Free online edition: text, metrics, charts and the report are processed in this browser. Up to ${coverage.maxPages} static-HTML pages are explored; content is not stored.`) : coverage.maxCrawlDepth === null ? (language === 'es' ? `Modo completo: se recorren todos los enlaces internos detectables y las URLs de sitemap, hasta ${coverage.maxCandidates} URLs candidatas.` : `Complete mode: all detectable internal links and sitemap URLs are traversed, up to ${coverage.maxCandidates} candidate URLs.`) : (language === 'es' ? `Modo rápido: hasta ${coverage.maxCrawlDepth} niveles y ${coverage.maxCrawlPagesPerDomain} páginas exploradas por dominio. Sitemaps y candidatas: hasta ${coverage.maxCandidates}.` : `Fast mode: up to ${coverage.maxCrawlDepth} link levels and ${coverage.maxCrawlPagesPerDomain} crawled pages per domain. Sitemaps and candidates: up to ${coverage.maxCandidates}.`)}</p>` : ''}
       </div>
     </details>
 
