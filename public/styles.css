@@ -1756,3 +1756,10 @@ details { margin: 14px 0; } summary { cursor: pointer; font-weight: 600; }
 .analysis-language-options label:has(input:checked) { border-color: #1e536b; background: #eef6f8; }
 
 .privacy-dialog .primary-button { width: 100%; min-height: 42px; }
+
+.engine-status { margin: 11px 0 0; color: #21586a; font-weight: 700; font-size: 0.88rem; }
+.execution-mode-options { display: grid; gap: 10px; margin: 18px 0 14px; }
+.execution-mode-card { display: block; width: 100%; padding: 15px; border: 1px solid #a9c3c4; border-radius: 5px; background: #fff; color: #203533; text-align: left; cursor: pointer; }
+.execution-mode-card:hover, .execution-mode-card:focus-visible { border-color: #1e536b; background: #eef6f8; outline: 2px solid transparent; }
+.execution-mode-card strong { display: block; margin-bottom: 4px; font-size: 1rem; }
+.execution-mode-card span { display: block; color: #4a5f63; font-size: 0.88rem; line-height: 1.45; }

@@ -17,6 +17,25 @@ server. It calculates results in each visitor's browser and does not store
 submitted URLs, page text, reports or results. It is not a replacement for the
 local full edition when a study needs broad domain coverage.
 
+## Use full local capacity from the website
+
+The public website can also act as the interface for the local full engine.
+This keeps the website workflow while the visitor's own computer performs the
+heavy work:
+
+1. Download this repository as a ZIP and start the local edition with
+   `launch-windows.bat` (or `sh launch-mac-linux.sh`). Keep it open.
+2. Visit [readabilityradar.com](https://readabilityradar.com), accept the
+   privacy notice and choose the analysis language.
+3. Choose **Full analysis on this computer** instead of quick online analysis.
+4. The website detects the local engine at `127.0.0.1`, then sends the analysis
+   request to that local engine.
+
+The local engine accepts browser requests only from `readabilityradar.com` and
+`www.readabilityradar.com`. Full-mode crawling, JavaScript rendering, reports
+and results remain on the visitor's computer; the public website does not
+receive or store the resulting text or report.
+
 ## Download and run the local full edition
 
 1. On this repository page, select **Code → Download ZIP**, then extract it.

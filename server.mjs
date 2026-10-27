@@ -20,6 +20,10 @@ globalThis.SPANISH_SYLLABLE_DICTIONARY = spanishSyllableData.entries;
 globalThis.SPANISH_SYLLABLE_CACHE = new Map();
 const execFileAsync = promisify(execFile);
 const analysisJobs = new Map();
+const REMOTE_BRIDGE_ORIGINS = new Set([
+  'https://readabilityradar.com',
+  'https://www.readabilityradar.com',
+]);
 
 const LIMITS = {
   maxPages: 10000,
@@ -52,6 +56,21 @@ const MIME = {
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+    applyBridgeCors(request, response);
+    if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
+      response.writeHead(204);
+      response.end();
+      return;
+    }
+    if (request.method === 'GET' && url.pathname === '/api/bridge-status') {
+      sendJson(response, 200, {
+        bridge: 'web-readability-radar-local',
+        version: 1,
+        capabilities: ['full-domain', 'sitemaps', 'local-rendering', 'reports'],
+        maxCandidates: LIMITS.maxCandidates,
+      });
+      return;
+    }
     if (request.method === 'POST' && url.pathname === '/api/analyze') {
       const body = await readJson(request);
       if (body.background === true) {
@@ -168,6 +187,17 @@ function sendJson(response, status, data) {
     'cache-control': 'no-store',
   });
   response.end(JSON.stringify(data));
+}
+
+function applyBridgeCors(request, response) {
+  const origin = request.headers.origin;
+  if (!REMOTE_BRIDGE_ORIGINS.has(origin)) return;
+  response.setHeader('access-control-allow-origin', origin);
+  response.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
+  response.setHeader('access-control-allow-headers', 'content-type');
+  response.setHeader('access-control-allow-private-network', 'true');
+  response.setHeader('access-control-max-age', '600');
+  response.setHeader('vary', 'Origin');
 }
 
 async function serveStatic(pathname, response) {

@@ -22,7 +22,10 @@ uploads remain in the visitor's browser.
 This is the **limited public web edition**, not the local full edition. The
 repository root contains the local application (`server.mjs` and launchers),
 which supports the broader 10,000-candidate workflow and optional local browser
-rendering. The README explains how to download and run it.
+rendering. The README explains how to download and run it. When that local
+engine is open, the website offers a **Full analysis on this computer** mode and
+uses it as a loopback-only companion; this provides the full local workflow
+without a paid remote server.
 
 ## Deployment state
 

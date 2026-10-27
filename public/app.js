@@ -305,8 +305,11 @@ let analysisLanguage = language;
 // version calculates in the visitor's browser and uses the Worker only as a
 // guarded HTML proxy.
 const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
+const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:55481'];
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
+let executionMode = cloudflareFreeEdition ? 'online' : 'local';
+let localEngineBase = null;
 let scope = 'domain';
 let inputSource = 'url';
 let analysisRunning = false;
@@ -332,8 +335,13 @@ const maxPagesInput = document.querySelector('#maxPages');
 const estimateButton = document.querySelector('#estimateButton');
 const privacyDialog = document.querySelector('#privacyDialog');
 const analysisLanguageDialog = document.querySelector('#analysisLanguageDialog');
+const executionModeDialog = document.querySelector('#executionModeDialog');
 const privacyAccept = document.querySelector('#privacyAccept');
 const analysisLanguageAccept = document.querySelector('#analysisLanguageAccept');
+const onlineModeButton = document.querySelector('#onlineModeButton');
+const localModeButton = document.querySelector('#localModeButton');
+const executionModeStatus = document.querySelector('#executionModeStatus');
+const engineStatus = document.querySelector('#engineStatus');
 
 const helpBubble = document.createElement('div');
 helpBubble.id = 'contextHelp';
@@ -383,8 +391,30 @@ analysisLanguageAccept.addEventListener('click', () => {
   analysisLanguage = selected?.value === 'en' ? 'en' : 'es';
   analysisLanguageConfirmed = true;
   analysisLanguageDialog.hidden = true;
-  document.querySelector('main').inert = false;
-  inputUrls.focus();
+  if (cloudflareFreeEdition) showExecutionModeDialog();
+  else finishIntroduction();
+});
+
+onlineModeButton.addEventListener('click', () => {
+  executionMode = 'online';
+  localEngineBase = null;
+  finishIntroduction();
+});
+
+localModeButton.addEventListener('click', async () => {
+  executionModeStatus.textContent = language === 'es' ? 'Buscando el motor local en este ordenador…' : 'Looking for the local engine on this computer…';
+  localModeButton.disabled = true;
+  const base = await findLocalEngine();
+  localModeButton.disabled = false;
+  if (!base) {
+    executionModeStatus.innerHTML = language === 'es'
+      ? 'El motor completo no está abierto todavía. Descarga o abre la versión local y vuelve a pulsar esta opción. <a href="https://github.com/MagicoutFIT/lecturabilidadradar.com/archive/refs/heads/main.zip">Descargar ZIP</a>'
+      : 'The full engine is not open yet. Download or open the local edition, then select this option again. <a href="https://github.com/MagicoutFIT/lecturabilidadradar.com/archive/refs/heads/main.zip">Download ZIP</a>';
+    return;
+  }
+  localEngineBase = base;
+  executionMode = 'local';
+  finishIntroduction();
 });
 
 scopeButtons.forEach((button) => {
@@ -579,12 +609,59 @@ function showAnalysisLanguageDialog() {
   analysisLanguageDialog.querySelector('input:checked')?.focus();
 }
 
+function showExecutionModeDialog() {
+  const isSpanish = language === 'es';
+  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'Capacidad de análisis' : 'Analysis capacity';
+  document.querySelector('#executionModeTitle').textContent = isSpanish ? '¿Cómo quieres realizar el análisis?' : 'How would you like to run the analysis?';
+  document.querySelector('#executionModeText').textContent = isSpanish
+    ? 'Puedes usar la versión web inmediata o conectar el motor local gratuito para una auditoría completa.'
+    : 'You can use the immediate web edition or connect the free local engine for a full audit.';
+  onlineModeButton.innerHTML = isSpanish
+    ? '<strong>Análisis rápido en línea</strong><span>Hasta 30 páginas con HTML disponible. No requiere instalación.</span>'
+    : '<strong>Quick online analysis</strong><span>Up to 30 pages with available HTML. No installation required.</span>';
+  localModeButton.innerHTML = isSpanish
+    ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Los resultados siguen en tu equipo.</span>'
+    : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Results stay on your device.</span>';
+  executionModeStatus.textContent = isSpanish
+    ? 'Si ya abriste la versión local, esta página la detectará automáticamente.'
+    : 'If you have already opened the local edition, this page will detect it automatically.';
+  executionModeDialog.hidden = false;
+  onlineModeButton.focus();
+}
+
+function finishIntroduction() {
+  executionModeDialog.hidden = true;
+  document.querySelector('main').inert = false;
+  updateEngineStatus();
+  syncScope();
+  inputUrls.focus();
+}
+
+function updateEngineStatus() {
+  if (!cloudflareFreeEdition) { engineStatus.hidden = true; return; }
+  engineStatus.hidden = false;
+  engineStatus.textContent = executionMode === 'local'
+    ? (language === 'es' ? '● Motor completo conectado en este ordenador · capacidad local' : '● Full local engine connected on this computer · local capacity')
+    : (language === 'es' ? '● Modo rápido en línea · hasta 30 páginas HTML' : '● Quick online mode · up to 30 HTML pages');
+}
+
+async function findLocalEngine() {
+  for (const base of LOCAL_ENGINE_CANDIDATES) {
+    try {
+      const response = await fetch(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store' });
+      const status = await response.json();
+      if (response.ok && status.bridge === 'web-readability-radar-local') return base;
+    } catch { /* Try the next supported local port. */ }
+  }
+  return null;
+}
+
 function completeSampleLabel() {
   return language === 'es' ? 'Todas las elegibles' : 'All eligible';
 }
 
 function syncIntensityField() {
-  if (cloudflareFreeEdition) {
+  if (cloudflareFreeEdition && executionMode !== 'local') {
     maxPagesInput.type = 'number';
     if (intensity === 'complete') {
       maxPagesInput.value = '30';
@@ -649,6 +726,10 @@ async function runAnalysis(estimateOnly) {
   }, 1000);
 
   try {
+    const usingLocalEngine = cloudflareFreeEdition && executionMode === 'local' && Boolean(localEngineBase);
+    if (cloudflareFreeEdition && executionMode === 'local' && !usingLocalEngine) {
+      throw new Error(language === 'es' ? 'El motor completo local no está conectado. Elige el modo rápido o abre la versión local.' : 'The full local engine is not connected. Choose quick mode or open the local edition.');
+    }
     const localHtml = await readLocalHtml();
     localSourceText = '';
     const requestBody = {
@@ -658,17 +739,17 @@ async function runAnalysis(estimateOnly) {
       exactUrls: scope === 'domain' ? exactUrls.value : '',
       includeRelatedSubdomains: scope === 'domain' && includeSubdomains.checked,
       estimateOnly,
-      maxPages: cloudflareFreeEdition ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value)),
-      samplingMode: cloudflareFreeEdition ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'),
+      maxPages: cloudflareFreeEdition && !usingLocalEngine ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value)),
+      samplingMode: cloudflareFreeEdition && !usingLocalEngine ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'),
       fragmentLimit: intensity === 'fast' ? 'top10' : null,
       minWords: document.querySelector('#minWords').value,
       minFragmentWords: document.querySelector('#minFragmentWords').value,
       htmlInput: localHtml?.content ?? '',
       htmlName: localHtml?.name ?? '',
-      background: !cloudflareFreeEdition,
+      background: !cloudflareFreeEdition || usingLocalEngine,
     };
     let payload;
-    if (cloudflareFreeEdition) {
+    if (cloudflareFreeEdition && !usingLocalEngine) {
       payload = await analyzeOnline(requestBody, (phase, completed, total) => {
         const progressTarget = results.querySelector('.loading-progress');
         if (!progressTarget) return;
@@ -677,7 +758,8 @@ async function runAnalysis(estimateOnly) {
           : (language === 'es' ? 'Descubriendo páginas y enlaces…' : 'Discovering pages and links…');
       });
     } else {
-      const response = await fetch('/api/analyze', {
+      const apiBase = usingLocalEngine ? localEngineBase : '';
+      const response = await fetch(`${apiBase}/api/analyze`, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody),
       });
       const started = await response.json();
@@ -685,7 +767,7 @@ async function runAnalysis(estimateOnly) {
       while (!payload) {
         if (!started.jobId) throw new Error(dictionary.error);
         await new Promise((resolve) => window.setTimeout(resolve, 750));
-        const statusResponse = await fetch(`/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`, { cache: 'no-store' });
+        const statusResponse = await fetch(`${apiBase}/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`, { cache: 'no-store' });
         const status = await statusResponse.json();
         if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
         const progressTarget = results.querySelector('.loading-progress');

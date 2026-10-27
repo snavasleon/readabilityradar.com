@@ -19,6 +19,7 @@
             <p class="lede" data-i18n="lede">
               Analyze domains or specific pages in English, explain which URLs enter the sample, and locate fragments that need attention.
             </p>
+            <p class="engine-status" id="engineStatus" hidden></p>
           </div>
         </div>
       </header>
@@ -232,6 +233,18 @@
         <fieldset class="analysis-language-options" id="analysisLanguageOptions"></fieldset>
         <p class="dialog-note" id="analysisLanguageNote"></p>
         <button class="primary-button" id="analysisLanguageAccept" type="button"></button>
+      </div>
+    </section>
+    <section class="privacy-overlay" id="executionModeDialog" role="dialog" aria-modal="true" aria-labelledby="executionModeTitle" hidden>
+      <div class="privacy-dialog">
+        <p class="eyebrow" id="executionModeEyebrow"></p>
+        <h2 id="executionModeTitle"></h2>
+        <p id="executionModeText"></p>
+        <div class="execution-mode-options">
+          <button type="button" class="execution-mode-card" id="onlineModeButton"></button>
+          <button type="button" class="execution-mode-card" id="localModeButton"></button>
+        </div>
+        <p class="dialog-note" id="executionModeStatus" aria-live="polite"></p>
       </div>
     </section>
 
