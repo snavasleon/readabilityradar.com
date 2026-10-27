@@ -26,7 +26,8 @@ heavy work:
 1. On Windows, download and open
    [Web Readability Radar for Windows](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe).
    It is a single portable application: Node.js does not need to be installed.
-   Keep the application open while using the full mode.
+   It starts silently and leaves the existing browser tab unchanged; keep the
+   application open while using the full mode.
 2. Visit [readabilityradar.com](https://readabilityradar.com), accept the
    privacy notice and choose the analysis language.
 3. Choose **Full analysis on this computer** instead of quick online analysis.

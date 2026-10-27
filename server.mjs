@@ -115,7 +115,6 @@ const server = createServer(async (request, response) => {
 });
 
 const requestedPort = Number(readArg('--port') ?? process.env.PORT ?? 8787);
-const portableWindowsApp = Boolean(process.pkg);
 listen(requestedPort, requestedPort === 8787 ? [55481] : []);
 
 async function loadSyllableValidation(language) {
@@ -156,9 +155,7 @@ function listen(port, fallbackPorts = []) {
     console.log(`Opened at: ${localUrl}`);
     console.log('Press Ctrl+C to close the server.');
     console.log('');
-    if (portableWindowsApp) {
-      openBrowser('https://readabilityradar.com');
-    } else if (process.argv.includes('--open')) {
+    if (process.argv.includes('--open')) {
       openBrowser(localUrl);
     }
   });
