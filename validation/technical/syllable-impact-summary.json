@@ -1,0 +1,19 @@
+{
+  "server_sha256": "2693d8d8512758d5dd7177e1a99c25cf92a6f14f1eed85854d91bd61f77058bc",
+  "es": {
+    "texts": 100,
+    "changed_categories": 0,
+    "mean_absolute_score_change": 0,
+    "maximum_absolute_score_change": 0,
+    "covered_tokens": 1956,
+    "total_tokens": 2720
+  },
+  "en": {
+    "texts": 100,
+    "changed_categories": 4,
+    "mean_absolute_score_change": 1.6524545278241447,
+    "maximum_absolute_score_change": 10.84615384615384,
+    "covered_tokens": 3347,
+    "total_tokens": 3817
+  }
+}

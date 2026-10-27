@@ -1,0 +1,8 @@
+name = "web-readability-radar"
+main = "src/worker.js"
+compatibility_date = "2026-10-19"
+
+[assets]
+directory = "../public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]

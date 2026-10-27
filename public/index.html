@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Web Readability Radar</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="brand-line">
+          <span class="brand-badge">Radar</span>
+          <span data-i18n="brandSubtitle">Readability and cognitive accessibility</span>
+        </div>
+        <div class="header-grid">
+          <div>
+            <h1 data-i18n="title">Web Readability Radar</h1>
+            <p class="lede" data-i18n="lede">
+              Analyze domains or specific pages in English, explain which URLs enter the sample, and locate fragments that need attention.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="control-card">
+          <form id="analyzerForm">
+            <div class="control-block">
+              <p class="label-row">
+                <span data-i18n="whatAnalyze">What do you want to analyze</span>
+                <span class="info-dot" data-i18n-title="whatAnalyzeHelp">i</span>
+              </p>
+              <div class="choice-grid source-choices">
+                <button class="choice active" type="button" data-scope="domain">
+                  <span aria-hidden="true">🌐</span>
+                  <span data-i18n="domainMode">Domain</span>
+                </button>
+                <button class="choice" type="button" data-scope="page">
+                  <span aria-hidden="true">▧</span>
+                  <span data-i18n="pageMode">One page</span>
+                </button>
+                <button class="choice" type="button" data-scope="html">
+                  <span aria-hidden="true">&lt;/&gt;</span>
+                  <span data-i18n="localHtml">Local HTML</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="control-block" id="urlInputBlock">
+              <label class="field">
+                <span class="label-row">
+                  <span id="mainInputLabel" data-i18n="domainInitial">Initial domain</span>
+                  <span class="info-dot" data-i18n-title="mainInputHelp">i</span>
+                </span>
+                <textarea id="inputUrls" rows="5" spellcheck="false">https://www.example.com</textarea>
+              </label>
+              <p class="hint" id="mainInputHint" data-i18n="domainHint">You can enter up to three domains, one per line.</p>
+            </div>
+
+            <div class="control-block html-only hidden">
+              <label class="field">
+                <span class="label-row">
+                  <span data-i18n="localHtml">Local HTML</span>
+                  <span class="info-dot" data-i18n-title="localHtmlHelp">i</span>
+                </span>
+                <input id="htmlFile" type="file" accept=".html,.htm,text/html" />
+              </label>
+              <button class="link-button hidden" id="clearHtmlButton" type="button" data-i18n="clearHtml">Remove file</button>
+              <p class="hint" data-i18n="localHtmlHint">Optional: analyze a saved HTML file from this computer.</p>
+            </div>
+
+            <div class="control-block domain-only">
+              <label class="field">
+                <span class="label-row">
+                  <span data-i18n="mandatoryPages">Required pages</span>
+                  <span class="info-dot" data-i18n-title="mandatoryHelp">i</span>
+                </span>
+                <textarea id="exactUrls" rows="4" spellcheck="false" placeholder="https://www.example.com/page"></textarea>
+              </label>
+              <p class="hint" data-i18n="mandatoryHint">Optional: these pages will always be included in the domain analysis.</p>
+            </div>
+
+            <div class="control-block domain-only scope-option">
+              <label class="check-field">
+                <input id="includeSubdomains" type="checkbox" />
+                <span data-i18n="includeSubdomains">Include related subdomains</span>
+                <span class="info-dot" data-i18n-title="includeSubdomainsHelp">i</span>
+              </label>
+              <p class="hint" data-i18n="includeSubdomainsHint">Off by default. Includes only hosts under the same registered domain.</p>
+            </div>
+
+            <div class="control-block">
+              <p class="label-row">
+                <span data-i18n="intensity">Analysis intensity</span>
+                <span class="info-dot" data-i18n-title="intensityHelp">i</span>
+              </p>
+              <div class="choice-grid compact">
+                <button class="choice active" type="button" data-intensity="fast">
+                  <span data-i18n="fast">Fast</span>
+                </button>
+                <button class="choice" type="button" data-intensity="complete">
+                  <span data-i18n="complete">Complete</span>
+                </button>
+              </div>
+              <p class="hint" data-i18n="portableLimit">Domain: random page sample and its 10 hardest fragments. One page or HTML: up to 10 fragments from that content.</p>
+            </div>
+
+            <details class="settings" open>
+              <summary>
+                <span data-i18n="samplingSettings">Analysis settings</span>
+                <span class="info-dot" data-i18n-title="settingsHelp">i</span>
+              </summary>
+              <div class="settings-grid">
+                <label class="number-field sample-size-field">
+                  <span data-i18n="sampleSize">Scope</span>
+                  <input id="maxPages" type="number" min="1" max="10000" value="12" required />
+                  <small class="input-limits">1–10000</small>
+                </label>
+                <label class="number-field">
+                  <span data-i18n="minWords">Page words</span>
+                  <input id="minWords" type="number" min="20" max="2000" value="80" required />
+                  <small class="input-limits">20–2000</small>
+                </label>
+                <label class="number-field">
+                  <span data-i18n="minFragmentWords">Fragment words</span>
+                  <input id="minFragmentWords" type="number" min="10" max="250" value="30" required />
+                  <small class="input-limits">10–250</small>
+                </label>
+              </div>
+            </details>
+
+            <div class="control-block">
+              <p class="label-row">
+                <span data-i18n="actions">Actions</span>
+                <span class="info-dot" data-i18n-title="actionsHelp">i</span>
+              </p>
+              <div class="action-stack">
+                <button class="secondary-button" id="estimateButton" type="button">
+                  <span aria-hidden="true">⌕</span>
+                  <span data-i18n="estimate">Estimate candidates</span>
+                </button>
+                <button class="primary-button" id="analyzeButton" type="submit">
+                  <span aria-hidden="true">⌕</span>
+                  <span data-i18n="analyze">Analyze now</span>
+                </button>
+                <button class="link-button" id="exampleButton" type="button">
+                  <span aria-hidden="true">▤</span>
+                  <span data-i18n="example">Load example</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <section class="legal-card">
+            <div>
+              <strong data-i18n="legalTitle">Legal and technical basis</strong>
+              <span class="info-dot" data-i18n-title="legalHelp">i</span>
+            </div>
+            <p data-i18n="legalText">Based on digital accessibility, plain language, and reproducible textual evaluation criteria.</p>
+            <p data-i18n="legalRefs">Indicative references: WCAG, EN 301 549, public-sector accessibility rules, and plain-language guidance.</p>
+          </section>
+        </aside>
+
+        <section class="results-column">
+          <nav class="tabs hidden" id="tabs">
+            <button class="tab active" type="button" data-area="panel" data-i18n="tabPanel">Summary</button>
+            <button class="tab" type="button" data-area="explore" data-i18n="tabExplore">Explore</button>
+            <button class="tab" type="button" data-area="criteria" data-i18n="tabCriteria">Methodology</button>
+            <div id="exploreViews" class="explore-views" hidden>
+              <button class="tab" type="button" data-tab="fragments" data-i18n="tabFragments">Fragments</button>
+              <button class="tab" type="button" data-tab="pages" data-i18n="tabPages">Pages</button>
+              <button class="tab" type="button" data-tab="sampling" data-i18n="tabSampling">Sampling</button>
+            </div>
+            <details class="report-download" id="reportDownload">
+              <summary id="reportDownloadLabel">Download report</summary>
+              <div class="report-menu">
+                <button type="button" data-report-kind="full">Full report</button>
+                <button type="button" data-report-kind="brief">Brief report</button>
+                <button type="button" data-report-kind="workbook">Results in Excel</button>
+              </div>
+            </details>
+          </nav>
+
+          <p class="sr-only" id="appStatus" role="status" aria-live="polite"></p>
+          <section id="results">
+            <div class="empty-layout">
+              <section class="intro-card">
+                <div>
+                  <span class="soft-badge" data-i18n="readyBadge">Ready to use</span>
+                  <h2 data-i18n="emptyTitle">Two review levels, with explained sampling</h2>
+                  <p data-i18n="emptyText">Analyze a domain to detect candidate pages or paste one exact page to review only that URL.</p>
+                </div>
+              </section>
+
+              <section class="feature-grid">
+                <article class="feature-card teal">
+                  <span aria-hidden="true">🌐</span>
+                  <h3 data-i18n="featureLevels">Two levels</h3>
+                  <p data-i18n="featureLevelsText">Domain or specific page.</p>
+                </article>
+                <article class="feature-card blue">
+                  <span aria-hidden="true">▰</span>
+                  <h3 data-i18n="featureTrace">Traceability</h3>
+                  <p data-i18n="featureTraceText">Source and selection reason by URL.</p>
+                </article>
+                <article class="feature-card amber">
+                  <span aria-hidden="true">⇩</span>
+                  <h3 data-i18n="featureExport">Export</h3>
+                  <p data-i18n="featureExportText">CSV for pages, sampling, and fragments.</p>
+                </article>
+              </section>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <section class="privacy-overlay" id="privacyDialog" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" hidden>
+      <div class="privacy-dialog">
+        <p class="eyebrow" id="privacyEyebrow"></p>
+        <h2 id="privacyTitle"></h2>
+        <div id="privacyBody"></div>
+        <button class="primary-button" id="privacyAccept" type="button"></button>
+      </div>
+    </section>
+    <section class="privacy-overlay" id="analysisLanguageDialog" role="dialog" aria-modal="true" aria-labelledby="analysisLanguageTitle" hidden>
+      <div class="privacy-dialog">
+        <p class="eyebrow" id="analysisLanguageEyebrow"></p>
+        <h2 id="analysisLanguageTitle"></h2>
+        <p id="analysisLanguageText"></p>
+        <fieldset class="analysis-language-options" id="analysisLanguageOptions"></fieldset>
+        <p class="dialog-note" id="analysisLanguageNote"></p>
+        <button class="primary-button" id="analysisLanguageAccept" type="button"></button>
+      </div>
+    </section>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

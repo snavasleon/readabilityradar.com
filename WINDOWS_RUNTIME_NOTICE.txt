@@ -1,0 +1,7 @@
+This version can include node.exe so the tool runs on Windows without installing Node.js.
+
+Node.js is distributed under the MIT license and other third-party licenses.
+Official information: https://nodejs.org/en/about/previous-releases
+License: https://github.com/nodejs/node/blob/main/LICENSE
+
+Web Readability Radar does not install anything on the system. It only opens a temporary local server on 127.0.0.1 while the window is open.

@@ -1,0 +1,50 @@
+# Web Readability Radar
+
+Local web readability radar.
+
+## Quick Start
+
+On Windows:
+
+1. Open this folder.
+2. Double-click `launch-windows.bat`.
+3. The browser opens the local app automatically.
+
+On macOS or Linux:
+
+1. Install Node.js 18 or newer if it is not already installed.
+2. Run `sh launch-mac-linux.sh` from this folder.
+
+## Included
+
+- English default interface, with an ES/EN language selector.
+- Full-domain analysis or exact-page analysis.
+- Fast mode explores a random page sample (12 by default, configurable from 1 to 10,000), then selects up to 10 random eligible fragments without replacement or repeated text. Starting and required pages are always included and may expand the page sample. For a single page or local HTML, fragments are sampled from that source. Selection does not depend on difficulty; selected fragments are subsequently sorted from hardest to easiest. Complete returns all eligible fragments from detected pages, up to the 10,000-page limit. The summary and full PDF cover all eligible content on explored pages, not only the 10 displayed fragments. Sampling seeds and chosen fragment IDs are recorded in the analysis criteria.
+- Spanish readability: Szigriszt-Pazos and INFLESZ.
+- English readability: Flesch Reading Ease.
+- CSV export for pages, sampling, and fragments.
+- Source links for every detected fragment.
+- Analysis can render JavaScript-heavy pages with the local browser when the initial HTML exposes little text.
+
+## Requirement
+
+The Windows portable package can include its own runtime in `runtime/node.exe`. If this folder is distributed without that runtime, install Node.js 18 or newer. No `npm install` step is required.
+
+On macOS and Linux, the launcher uses the system `node` command. Dynamic-page rendering uses an installed Chrome, Chromium, or Microsoft Edge when available. If no compatible browser is installed, the app still works with the initial HTML returned by each page.
+
+## Folder Guide
+
+- `launch-windows.bat`: start on Windows.
+- `launch-mac-linux.sh`: start on macOS or Linux; see `MACOS.md`.
+- `validation/README.md`: open the single `validation-results.xlsx` workbook. Green tabs contain Spanish validation and blue tabs contain English validation; yellow INFLESZ entry cells are in `Spanish Summary`. HTML tests and technical CSV files remain in their language folders.
+- `public`, `runtime`, `server.mjs`, `package.json`: application files.
+
+## Reports and Exports
+
+After analysis, use Download report for brief/full PDF or Excel results. The browser print dialog saves the report as PDF. Summary, Explore and Methodology are the three main areas; Explore reuses the Fragments, Pages and Sampling views. CSV downloads remain available there. README documentation is the first Excel worksheet, not a separate web button.
+
+Spanish processing follows the supplied INFLESZ operational documentation for sentence delimiters, numeric/symbol words, recognized abbreviations and hyphenated compounds. This does not establish exact agreement with the external INFLESZ program: that comparison remains pending. English processing is separate. See `validation/technical/README.md` for conventions, ambiguous cases and reproduction commands.
+
+## Privacy
+
+Analysis runs on your computer. Entered URLs are requested from your computer. Dynamic pages may open a local headless browser. Results are not automatically stored on an external server. Stop the local server with Control+C.

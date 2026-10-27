@@ -1,0 +1,2 @@
+﻿reference_software,texts_total,texts_compared,external_errors,mean_radar_score,mean_inflesz_score,mean_signed_difference,mean_absolute_difference,pearson_correlation,lins_concordance_correlation,category_agreement,same_category_count,external_unavailable,generated_at,radar_server_sha256
+INFLESZ,100,100,0,33.856382605684146,34.0312,-0.1748173943158518,1.0048311952967646,0.9987876535385443,0.9986401766851591,0.96,96,[],2026-10-19T15:55:51Z,c9fdf25d76b748d8894dfbd82dfa5078ba690b9441b99485b321dd36809d7b4a

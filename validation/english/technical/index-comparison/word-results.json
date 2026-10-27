@@ -1,0 +1,726 @@
+{
+  "metadata": {
+    "software": "Microsoft Word",
+    "version": "16.0",
+    "build": "16.0.20326",
+    "proofing_language": "English (United States)",
+    "language_id": 1033,
+    "metric": "Flesch Reading Ease",
+    "generated_at": "2026-10-15T08:41:49.2732293Z",
+    "radar_server_sha256": "96b92babb71405747404ed66ef621e220705d7638fe0d0e9ee6bce5a7d53f583",
+    "statistics_indices": {
+      "Sentences per Paragraph": 5,
+      "Paragraphs": 3,
+      "Characters": 2,
+      "Characters per Word": 7,
+      "Flesch-Kincaid Grade Level": 9,
+      "Passive Sentences": 10,
+      "Flesch Reading Ease": 8,
+      "Words per Sentence": 6,
+      "Sentences": 4,
+      "Words": 1
+    }
+  },
+  "records": [
+    {
+      "text_id": "EASY-001",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.5,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-002",
+      "word_words": 35,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.0,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-003",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 99.0999984741211,
+      "word_flesch_kincaid_grade": 1.7000000476837158
+    },
+    {
+      "text_id": "EASY-004",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 89.5999984741211,
+      "word_flesch_kincaid_grade": 2.9000000953674316
+    },
+    {
+      "text_id": "EASY-005",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.2999999523162842
+    },
+    {
+      "text_id": "EASY-006",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.2999999523162842
+    },
+    {
+      "text_id": "EASY-007",
+      "word_words": 35,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 98.80000305175781,
+      "word_flesch_kincaid_grade": 1.600000023841858
+    },
+    {
+      "text_id": "EASY-008",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.0
+    },
+    {
+      "text_id": "EASY-009",
+      "word_words": 35,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.0,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-010",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 0.699999988079071
+    },
+    {
+      "text_id": "EASY-011",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 97.0,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-012",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 0.699999988079071
+    },
+    {
+      "text_id": "EASY-013",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.5999984741211,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-014",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 0.699999988079071
+    },
+    {
+      "text_id": "EASY-015",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.69999694824219,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-016",
+      "word_words": 35,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 84.30000305175781,
+      "word_flesch_kincaid_grade": 3.5999999046325684
+    },
+    {
+      "text_id": "EASY-017",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.30000305175781,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-018",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 97.0,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-019",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 89.9000015258789,
+      "word_flesch_kincaid_grade": 3.0
+    },
+    {
+      "text_id": "EASY-020",
+      "word_words": 36,
+      "word_sentences": 3,
+      "word_flesch_reading_ease": 93.5999984741211,
+      "word_flesch_kincaid_grade": 3.0999999046325684
+    },
+    {
+      "text_id": "EASY-021",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 92.19999694824219,
+      "word_flesch_kincaid_grade": 2.5999999046325684
+    },
+    {
+      "text_id": "EASY-022",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 97.0,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-023",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.399999976158142
+    },
+    {
+      "text_id": "EASY-024",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 99.0,
+      "word_flesch_kincaid_grade": 1.600000023841858
+    },
+    {
+      "text_id": "EASY-025",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.5,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-026",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 89.9000015258789,
+      "word_flesch_kincaid_grade": 3.0
+    },
+    {
+      "text_id": "EASY-027",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.5999984741211,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-028",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.399999976158142
+    },
+    {
+      "text_id": "EASY-029",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.5,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-030",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 87.5999984741211,
+      "word_flesch_kincaid_grade": 3.299999952316284
+    },
+    {
+      "text_id": "EASY-031",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.30000305175781,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-032",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.80000305175781,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-033",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 85.80000305175781,
+      "word_flesch_kincaid_grade": 3.5999999046325684
+    },
+    {
+      "text_id": "EASY-034",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.5,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-035",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 85.4000015258789,
+      "word_flesch_kincaid_grade": 3.5999999046325684
+    },
+    {
+      "text_id": "EASY-036",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.69999694824219,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-037",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.80000305175781,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-038",
+      "word_words": 40,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 93.0,
+      "word_flesch_kincaid_grade": 2.700000047683716
+    },
+    {
+      "text_id": "EASY-039",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.80000305175781,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-040",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.399999976158142
+    },
+    {
+      "text_id": "EASY-041",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 82.5,
+      "word_flesch_kincaid_grade": 3.9000000953674316
+    },
+    {
+      "text_id": "EASY-042",
+      "word_words": 38,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 99.19999694824219,
+      "word_flesch_kincaid_grade": 1.7000000476837158
+    },
+    {
+      "text_id": "EASY-043",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.80000305175781,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-044",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 92.19999694824219,
+      "word_flesch_kincaid_grade": 2.5999999046325684
+    },
+    {
+      "text_id": "EASY-045",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 94.5,
+      "word_flesch_kincaid_grade": 2.299999952316284
+    },
+    {
+      "text_id": "EASY-046",
+      "word_words": 40,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 95.0999984741211,
+      "word_flesch_kincaid_grade": 2.4000000953674316
+    },
+    {
+      "text_id": "EASY-047",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.399999976158142
+    },
+    {
+      "text_id": "EASY-048",
+      "word_words": 37,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 100.0,
+      "word_flesch_kincaid_grade": 1.399999976158142
+    },
+    {
+      "text_id": "EASY-049",
+      "word_words": 36,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 96.5999984741211,
+      "word_flesch_kincaid_grade": 2.0
+    },
+    {
+      "text_id": "EASY-050",
+      "word_words": 40,
+      "word_sentences": 4,
+      "word_flesch_reading_ease": 90.9000015258789,
+      "word_flesch_kincaid_grade": 3.0
+    },
+    {
+      "text_id": "DIFF-001",
+      "word_words": 39,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 36.5
+    },
+    {
+      "text_id": "DIFF-002",
+      "word_words": 37,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.700000762939453
+    },
+    {
+      "text_id": "DIFF-003",
+      "word_words": 39,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.399999618530273
+    },
+    {
+      "text_id": "DIFF-004",
+      "word_words": 39,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.700000762939453
+    },
+    {
+      "text_id": "DIFF-005",
+      "word_words": 40,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 32.70000076293945
+    },
+    {
+      "text_id": "DIFF-006",
+      "word_words": 39,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 32.20000076293945
+    },
+    {
+      "text_id": "DIFF-007",
+      "word_words": 38,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.5
+    },
+    {
+      "text_id": "DIFF-008",
+      "word_words": 43,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 33.0
+    },
+    {
+      "text_id": "DIFF-009",
+      "word_words": 41,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.0
+    },
+    {
+      "text_id": "DIFF-010",
+      "word_words": 41,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 33.400001525878906
+    },
+    {
+      "text_id": "DIFF-011",
+      "word_words": 42,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 31.600000381469727
+    },
+    {
+      "text_id": "DIFF-012",
+      "word_words": 40,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 28.299999237060547
+    },
+    {
+      "text_id": "DIFF-013",
+      "word_words": 41,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.299999237060547
+    },
+    {
+      "text_id": "DIFF-014",
+      "word_words": 40,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.299999237060547
+    },
+    {
+      "text_id": "DIFF-015",
+      "word_words": 39,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 32.900001525878906
+    },
+    {
+      "text_id": "DIFF-016",
+      "word_words": 38,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 29.299999237060547
+    },
+    {
+      "text_id": "DIFF-017",
+      "word_words": 43,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 28.299999237060547
+    },
+    {
+      "text_id": "DIFF-018",
+      "word_words": 42,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.5
+    },
+    {
+      "text_id": "DIFF-019",
+      "word_words": 40,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 31.5
+    },
+    {
+      "text_id": "DIFF-020",
+      "word_words": 42,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 31.100000381469727
+    },
+    {
+      "text_id": "DIFF-021",
+      "word_words": 43,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 32.70000076293945
+    },
+    {
+      "text_id": "DIFF-022",
+      "word_words": 42,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 28.600000381469727
+    },
+    {
+      "text_id": "DIFF-023",
+      "word_words": 41,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 27.399999618530273
+    },
+    {
+      "text_id": "DIFF-024",
+      "word_words": 39,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 30.399999618530273
+    },
+    {
+      "text_id": "DIFF-025",
+      "word_words": 42,
+      "word_sentences": 1,
+      "word_flesch_reading_ease": 0.0,
+      "word_flesch_kincaid_grade": 32.79999923706055
+    },
+    {
+      "text_id": "DIFF-026",
+      "word_words": 35,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 44.0,
+      "word_flesch_kincaid_grade": 11.399999618530273
+    },
+    {
+      "text_id": "DIFF-027",
+      "word_words": 41,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 25.0,
+      "word_flesch_kincaid_grade": 14.800000190734863
+    },
+    {
+      "text_id": "DIFF-028",
+      "word_words": 35,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 22.200000762939453,
+      "word_flesch_kincaid_grade": 14.399999618530273
+    },
+    {
+      "text_id": "DIFF-029",
+      "word_words": 36,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 47.5,
+      "word_flesch_kincaid_grade": 11.0
+    },
+    {
+      "text_id": "DIFF-030",
+      "word_words": 37,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 37.099998474121094,
+      "word_flesch_kincaid_grade": 12.600000381469727
+    },
+    {
+      "text_id": "DIFF-031",
+      "word_words": 40,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 32.099998474121094,
+      "word_flesch_kincaid_grade": 13.699999809265137
+    },
+    {
+      "text_id": "DIFF-032",
+      "word_words": 37,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 18.799999237060547,
+      "word_flesch_kincaid_grade": 15.199999809265137
+    },
+    {
+      "text_id": "DIFF-033",
+      "word_words": 38,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 40.599998474121094,
+      "word_flesch_kincaid_grade": 12.300000190734863
+    },
+    {
+      "text_id": "DIFF-034",
+      "word_words": 38,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 47.20000076293945,
+      "word_flesch_kincaid_grade": 11.300000190734863
+    },
+    {
+      "text_id": "DIFF-035",
+      "word_words": 41,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 35.29999923706055,
+      "word_flesch_kincaid_grade": 13.399999618530273
+    },
+    {
+      "text_id": "DIFF-036",
+      "word_words": 37,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 41.70000076293945,
+      "word_flesch_kincaid_grade": 12.0
+    },
+    {
+      "text_id": "DIFF-037",
+      "word_words": 40,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 36.29999923706055,
+      "word_flesch_kincaid_grade": 13.100000381469727
+    },
+    {
+      "text_id": "DIFF-038",
+      "word_words": 38,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 18.299999237060547,
+      "word_flesch_kincaid_grade": 15.399999618530273
+    },
+    {
+      "text_id": "DIFF-039",
+      "word_words": 40,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 46.900001525878906,
+      "word_flesch_kincaid_grade": 11.600000381469727
+    },
+    {
+      "text_id": "DIFF-040",
+      "word_words": 40,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 34.20000076293945,
+      "word_flesch_kincaid_grade": 13.399999618530273
+    },
+    {
+      "text_id": "DIFF-041",
+      "word_words": 38,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 20.5,
+      "word_flesch_kincaid_grade": 15.100000381469727
+    },
+    {
+      "text_id": "DIFF-042",
+      "word_words": 36,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 7.599999904632568,
+      "word_flesch_kincaid_grade": 16.600000381469727
+    },
+    {
+      "text_id": "DIFF-043",
+      "word_words": 41,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 29.200000762939453,
+      "word_flesch_kincaid_grade": 14.199999809265137
+    },
+    {
+      "text_id": "DIFF-044",
+      "word_words": 39,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 26.5,
+      "word_flesch_kincaid_grade": 14.399999618530273
+    },
+    {
+      "text_id": "DIFF-045",
+      "word_words": 37,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 18.799999237060547,
+      "word_flesch_kincaid_grade": 15.199999809265137
+    },
+    {
+      "text_id": "DIFF-046",
+      "word_words": 40,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 32.099998474121094,
+      "word_flesch_kincaid_grade": 13.699999809265137
+    },
+    {
+      "text_id": "DIFF-047",
+      "word_words": 38,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 47.20000076293945,
+      "word_flesch_kincaid_grade": 11.300000190734863
+    },
+    {
+      "text_id": "DIFF-048",
+      "word_words": 41,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 37.400001525878906,
+      "word_flesch_kincaid_grade": 13.100000381469727
+    },
+    {
+      "text_id": "DIFF-049",
+      "word_words": 41,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 47.70000076293945,
+      "word_flesch_kincaid_grade": 11.600000381469727
+    },
+    {
+      "text_id": "DIFF-050",
+      "word_words": 39,
+      "word_sentences": 2,
+      "word_flesch_reading_ease": 24.299999237060547,
+      "word_flesch_kincaid_grade": 14.699999809265137
+    }
+  ]
+}

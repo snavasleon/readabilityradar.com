@@ -1,0 +1,9 @@
+{
+  "server_sha256": "b5bbf4a637211c7d7fa2bd5c43161565e865223aa3b913e2c153ca7e39407dfa",
+  "processing_cases": 18,
+  "classification_boundaries": 9,
+  "paragraph_integrity": "passed: complete semantic paragraphs only; no sentence-based split or container fallback; repeated paragraphs preserved",
+  "content_boundaries": "passed: navigation/header/footer excluded consistently; pages above the technical limit fail rather than truncate",
+  "random_sampling": "passed: seed, score/order invariance, uniqueness, small pool, coverage",
+  "external_inflesz": "pending"
+}
