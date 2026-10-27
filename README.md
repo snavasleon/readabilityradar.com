@@ -28,8 +28,9 @@ heavy work:
 2. Visit [readabilityradar.com](https://readabilityradar.com), accept the
    privacy notice and choose the analysis language.
 3. Choose **Full analysis on this computer** instead of quick online analysis.
-4. The website detects the local engine at `127.0.0.1`, then sends the analysis
-   request to that local engine.
+4. Chrome asks for permission to connect **only to the local application on
+   this computer**. Grant that permission; the website then detects the local
+   engine at `127.0.0.1` and sends the analysis request to it.
 
 The local engine accepts browser requests only from `readabilityradar.com` and
 `www.readabilityradar.com`. Full-mode crawling, JavaScript rendering, reports

@@ -620,11 +620,11 @@ function showExecutionModeDialog() {
     ? '<strong>Análisis rápido en línea</strong><span>Hasta 30 páginas con HTML disponible. No requiere instalación.</span>'
     : '<strong>Quick online analysis</strong><span>Up to 30 pages with available HTML. No installation required.</span>';
   localModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Los resultados siguen en tu equipo.</span>'
-    : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Results stay on your device.</span>';
+    ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Chrome te pedirá permiso para conectar con la aplicación local.</span>'
+    : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Chrome will ask permission to connect to the local application.</span>';
   executionModeStatus.textContent = isSpanish
-    ? 'Si ya abriste la versión local, esta página la detectará automáticamente.'
-    : 'If you have already opened the local edition, this page will detect it automatically.';
+    ? 'Si ya abriste la versión local, Chrome solicitará tu permiso para detectarla. No se conecta a otros dispositivos de tu red.'
+    : 'If you have already opened the local edition, Chrome will request permission to detect it. It does not connect to other devices on your network.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
 }
@@ -648,12 +648,20 @@ function updateEngineStatus() {
 async function findLocalEngine() {
   for (const base of LOCAL_ENGINE_CANDIDATES) {
     try {
-      const response = await fetch(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store' });
+      const response = await fetchLocalEngine(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store' });
       const status = await response.json();
       if (response.ok && status.bridge === 'web-readability-radar-local') return base;
     } catch { /* Try the next supported local port. */ }
   }
   return null;
+}
+
+// Chrome 142+ asks for an explicit, user-granted Local Network Access permission
+// before a public site can talk to an application on this computer.  This option
+// tells Chrome that localhost is the intended destination, so it can show that
+// prompt instead of treating the connection as an unsolicited network request.
+function fetchLocalEngine(url, options = {}) {
+  return fetch(url, { ...options, targetAddressSpace: 'local' });
 }
 
 function completeSampleLabel() {
@@ -759,7 +767,10 @@ async function runAnalysis(estimateOnly) {
       });
     } else {
       const apiBase = usingLocalEngine ? localEngineBase : '';
-      const response = await fetch(`${apiBase}/api/analyze`, {
+      const request = `${apiBase}/api/analyze`;
+      const response = usingLocalEngine ? await fetchLocalEngine(request, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody),
+      }) : await fetch(request, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody),
       });
       const started = await response.json();
@@ -767,7 +778,10 @@ async function runAnalysis(estimateOnly) {
       while (!payload) {
         if (!started.jobId) throw new Error(dictionary.error);
         await new Promise((resolve) => window.setTimeout(resolve, 750));
-        const statusResponse = await fetch(`${apiBase}/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`, { cache: 'no-store' });
+        const statusUrl = `${apiBase}/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`;
+        const statusResponse = usingLocalEngine
+          ? await fetchLocalEngine(statusUrl, { cache: 'no-store' })
+          : await fetch(statusUrl, { cache: 'no-store' });
         const status = await statusResponse.json();
         if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
         const progressTarget = results.querySelector('.loading-progress');
