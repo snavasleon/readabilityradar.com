@@ -10,6 +10,9 @@ const MAX_REDIRECTS = 4;
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.hostname === 'www.readabilityradar.com') {
+      return Response.redirect(`https://readabilityradar.com${url.pathname}${url.search}`, 301);
+    }
     if (url.pathname === '/api/dictionary' && request.method === 'GET') {
       const language = url.searchParams.get('language') === 'en' ? 'en' : 'es';
       return json(language === 'en' ? englishSyllables.entries : spanishSyllables.entries, 200, {
