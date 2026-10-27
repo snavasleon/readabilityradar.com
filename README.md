@@ -1,8 +1,35 @@
 # Web Readability Radar
 
-Local web readability radar.
+Open-source web readability analysis for Spanish and English.
 
-## Quick Start
+## Choose an edition
+
+This repository contains **two different editions**. They share the same
+readability formulas and interface, but they are intended for different uses.
+
+| Edition | Where it runs | Coverage | Best for |
+| --- | --- | --- | --- |
+| **Public web edition** | [readabilityradar.com](https://readabilityradar.com) | Up to 30 static-HTML pages per domain; JavaScript-rendered text may be incomplete | Free, quick public analyses without installation |
+| **Local full edition** | Your own Windows, macOS or Linux computer | Up to 10,000 candidate pages; sitemaps, internal links, robots.txt and optional local browser rendering | Large, reproducible audits and JavaScript-heavy websites |
+
+The public web edition is deliberately limited so it can run without a paid
+server. It calculates results in each visitor's browser and does not store
+submitted URLs, page text, reports or results. It is not a replacement for the
+local full edition when a study needs broad domain coverage.
+
+## Download and run the local full edition
+
+1. On this repository page, select **Code → Download ZIP**, then extract it.
+2. Install [Node.js 18 or newer](https://nodejs.org/) if it is not already
+   available.
+3. On Windows, double-click `launch-windows.bat`.
+4. On macOS/Linux, run `sh launch-mac-linux.sh`.
+
+The local edition is free and runs on the user's computer. A local Chrome,
+Chromium or Edge installation is optional but enables rendering for pages whose
+useful content is produced with JavaScript.
+
+## Local quick start
 
 On Windows:
 

@@ -19,6 +19,11 @@ The public edition is designed to run without a paid application server:
 No database stores submitted URLs, fetched text, results or reports. Local HTML
 uploads remain in the visitor's browser.
 
+This is the **limited public web edition**, not the local full edition. The
+repository root contains the local application (`server.mjs` and launchers),
+which supports the broader 10,000-candidate workflow and optional local browser
+rendering. The README explains how to download and run it.
+
 ## Deployment state
 
 - `readabilityradar.com` is an active Cloudflare zone on the Free plan.
