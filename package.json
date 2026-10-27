@@ -4,9 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "build:windows": "pkg . --target node24-win-x64 --output dist/Web-Readability-Radar.exe"
   },
+  "bin": "server.mjs",
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "6.24.0"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "resources/*.json"
+    ]
   }
 }

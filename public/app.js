@@ -306,6 +306,7 @@ let analysisLanguage = language;
 // guarded HTML proxy.
 const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
 const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:55481'];
+const WINDOWS_APP_DOWNLOAD = 'https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe';
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
@@ -408,8 +409,8 @@ localModeButton.addEventListener('click', async () => {
   localModeButton.disabled = false;
   if (!base) {
     executionModeStatus.innerHTML = language === 'es'
-      ? 'El motor completo no está abierto todavía. Descarga o abre la versión local y vuelve a pulsar esta opción. <a href="https://github.com/MagicoutFIT/lecturabilidadradar.com/archive/refs/heads/main.zip">Descargar ZIP</a>'
-      : 'The full engine is not open yet. Download or open the local edition, then select this option again. <a href="https://github.com/MagicoutFIT/lecturabilidadradar.com/archive/refs/heads/main.zip">Download ZIP</a>';
+      ? `El análisis completo necesita la aplicación gratuita para Windows. <a href="${WINDOWS_APP_DOWNLOAD}">Descargar Web Readability Radar para Windows (.exe)</a>, ábrela y vuelve a pulsar esta opción.`
+      : `Full analysis needs the free Windows application. <a href="${WINDOWS_APP_DOWNLOAD}">Download Web Readability Radar for Windows (.exe)</a>, open it, then select this option again.`;
     return;
   }
   localEngineBase = base;
@@ -623,8 +624,8 @@ function showExecutionModeDialog() {
     ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Chrome te pedirá permiso para conectar con la aplicación local.</span>'
     : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Chrome will ask permission to connect to the local application.</span>';
   executionModeStatus.textContent = isSpanish
-    ? 'Si ya abriste la versión local, Chrome solicitará tu permiso para detectarla. No se conecta a otros dispositivos de tu red.'
-    : 'If you have already opened the local edition, Chrome will request permission to detect it. It does not connect to other devices on your network.';
+    ? 'Primera vez: descarga y abre la aplicación para Windows. Después, Chrome solicitará tu permiso para detectarla. No se conecta a otros dispositivos de tu red.'
+    : 'First time: download and open the Windows application. Chrome will then request permission to detect it. It does not connect to other devices on your network.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
 }

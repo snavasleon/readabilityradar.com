@@ -23,8 +23,10 @@ The public website can also act as the interface for the local full engine.
 This keeps the website workflow while the visitor's own computer performs the
 heavy work:
 
-1. Download this repository as a ZIP and start the local edition with
-   `launch-windows.bat` (or `sh launch-mac-linux.sh`). Keep it open.
+1. On Windows, download and open
+   [Web Readability Radar for Windows](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe).
+   It is a single portable application: Node.js does not need to be installed.
+   Keep the application open while using the full mode.
 2. Visit [readabilityradar.com](https://readabilityradar.com), accept the
    privacy notice and choose the analysis language.
 3. Choose **Full analysis on this computer** instead of quick online analysis.
@@ -37,6 +39,9 @@ The local engine accepts browser requests only from `readabilityradar.com` and
 and results remain on the visitor's computer; the public website does not
 receive or store the resulting text or report.
 
+The ZIP/source-code route below remains available for macOS, Linux and advanced
+users who want to inspect, reproduce or modify the application.
+
 ## Download and run the local full edition
 
 1. On this repository page, select **Code → Download ZIP**, then extract it.
@@ -48,6 +53,21 @@ receive or store the resulting text or report.
 The local edition is free and runs on the user's computer. A local Chrome,
 Chromium or Edge installation is optional but enables rendering for pages whose
 useful content is produced with JavaScript.
+
+## Windows application release
+
+The Windows `.exe` is the recommended path for participants. It is built from
+the same open source with:
+
+```text
+npm install
+npm run build:windows
+```
+
+The resulting file is `dist/Web-Readability-Radar.exe`. It includes the Node.js
+runtime but is not code-signed, so Windows may show a SmartScreen warning on a
+first download. Releases publish a SHA-256 checksum so recipients can verify
+the file they downloaded.
 
 ## Local quick start
 
