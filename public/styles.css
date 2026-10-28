@@ -1479,6 +1479,12 @@ button:focus-visible, a:focus-visible, summary:focus-visible, select:focus-visib
   border-bottom: 1px solid var(--border);
 }
 
+.fragment-pagination {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 4px;
+}
+
 .fragment-facts > div {
   min-width: 84px;
   padding: 9px 14px 9px 0;

@@ -324,6 +324,8 @@ let localSourceText = '';
 let fragmentSort = 'hardest';
 let pageSort = 'hardest';
 let fragmentFilter = 'all';
+const FRAGMENTS_PER_PAGE = 50;
+let visibleFragmentCount = FRAGMENTS_PER_PAGE;
 
 const form = document.querySelector('#analyzerForm');
 const results = document.querySelector('#results');
@@ -1175,12 +1177,14 @@ function renderFragments(dictionary) {
   }
   const allFragments = result.fragments ?? [];
   const fragments = sortedFragments(filterFragments(allFragments));
+  const visibleFragments = fragments.slice(0, visibleFragmentCount);
+  const hasMoreFragments = visibleFragments.length < fragments.length;
   results.innerHTML = `
     <section class="panel-card">
       <div class="panel-head">
         <div>
           <h2>${escapeHtml(dictionary.fragmentsTitle)}</h2>
-          <p>${escapeHtml(language === 'es' ? `Mostrando ${fragments.length} de ${allFragments.length} fragmentos disponibles en esta vista${fragmentFilter === 'all' ? '' : ` con filtro ${trafficLabel(fragmentFilter)}`}. ${result.criteria.fragmentSelection === 'hardest_from_selected_pages' ? 'Los más difíciles de la muestra aleatoria de páginas.' : 'Análisis completo.'}` : `Showing ${fragments.length} of ${allFragments.length} fragments available in this view${fragmentFilter === 'all' ? '' : ` with the ${trafficLabel(fragmentFilter)} filter`}. ${result.criteria.fragmentSelection === 'hardest_from_selected_pages' ? 'Hardest fragments from the random page sample.' : 'Complete analysis.'}`)}</p>
+          <p>${escapeHtml(language === 'es' ? `Mostrando ${visibleFragments.length} de ${fragments.length} fragmentos en esta vista (${allFragments.length} en total)${fragmentFilter === 'all' ? '' : ` con filtro ${trafficLabel(fragmentFilter)}`}. ${result.criteria.fragmentSelection === 'hardest_from_selected_pages' ? 'Los más difíciles de la muestra aleatoria de páginas.' : 'Análisis completo.'}` : `Showing ${visibleFragments.length} of ${fragments.length} fragments in this view (${allFragments.length} total)${fragmentFilter === 'all' ? '' : ` with the ${trafficLabel(fragmentFilter)} filter`}. ${result.criteria.fragmentSelection === 'hardest_from_selected_pages' ? 'Hardest fragments from the random page sample.' : 'Complete analysis.'}`)}</p>
         </div>
         <div class="panel-actions">
           <label class="sort-control">
@@ -1199,12 +1203,18 @@ function renderFragments(dictionary) {
         ${trafficFilterButtons(trafficCounts(result), true)}
       </div>
       <div class="list">
-        ${fragments.length ? fragments.map((fragment) => fragmentCard(fragment, dictionary)).join('') : `<p class="reason">${escapeHtml(language === 'es' ? `No se encontraron párrafos independientes elegibles en las ${result.summary.selected} páginas seleccionadas. ${result.pages.filter(p=>p.status==='error').length} errores de lectura. Consulta Páginas para ver los motivos y las exclusiones.` : `No eligible independent paragraphs were found in the ${result.summary.selected} selected pages. ${result.pages.filter(p=>p.status==='error').length} reading errors. See Pages for reasons and exclusions.`)}</p>`}
+        ${fragments.length ? visibleFragments.map((fragment) => fragmentCard(fragment, dictionary)).join('') : `<p class="reason">${escapeHtml(language === 'es' ? `No se encontraron párrafos independientes elegibles en las ${result.summary.selected} páginas seleccionadas. ${result.pages.filter(p=>p.status==='error').length} errores de lectura. Consulta Páginas para ver los motivos y las exclusiones.` : `No eligible independent paragraphs were found in the ${result.summary.selected} selected pages. ${result.pages.filter(p=>p.status==='error').length} reading errors. See Pages for reasons and exclusions.`)}</p>`}
       </div>
+      ${hasMoreFragments ? `<div class="fragment-pagination"><button type="button" class="secondary-button" id="showMoreFragments">${escapeHtml(language === 'es' ? `Mostrar 50 más (${fragments.length - visibleFragments.length} restantes)` : `Show 50 more (${fragments.length - visibleFragments.length} remaining)`)}</button></div>` : ''}
     </section>
   `;
   document.querySelector('#fragmentSort')?.addEventListener('change', (event) => {
     fragmentSort = event.target.value;
+    visibleFragmentCount = FRAGMENTS_PER_PAGE;
+    renderFragments(STRINGS[language]);
+  });
+  document.querySelector('#showMoreFragments')?.addEventListener('click', () => {
+    visibleFragmentCount += FRAGMENTS_PER_PAGE;
     renderFragments(STRINGS[language]);
   });
   bindTrafficFilters();
@@ -1355,6 +1365,7 @@ function bindTrafficFilters() {
     button.addEventListener('click', () => {
       const nextFilter = button.dataset.fragmentFilter;
       fragmentFilter = nextFilter;
+      visibleFragmentCount = FRAGMENTS_PER_PAGE;
       const status = document.querySelector('#appStatus');
       const label = nextFilter === 'all'
         ? (language === 'es' ? 'Filtro de fragmentos restablecido.' : 'Fragment filter reset.')
@@ -1619,7 +1630,7 @@ function difficultLevel(level) {
 }
 
 function trafficCounts(result) {
-  const fragments = result.pages?.flatMap((page) => page.fragments ?? []) ?? result.fragments ?? [];
+  const fragments = result.fragments ?? result.pages?.flatMap((page) => page.fragments ?? []) ?? [];
   return fragments.reduce((counts, fragment) => {
     const severity = severityForReading(fragment.score, fragment.level);
     if (severity.code in counts) counts[severity.code] += 1;
@@ -1760,10 +1771,10 @@ function openScientificReport(result, kind) {
   const t = (spanish, english) => es ? spanish : english;
   const e = escapeHtml;
   const analysisLanguageName = result.language === 'es' ? t('español', 'Spanish') : t('inglés', 'English');
-  const all = result.pages.flatMap(page => page.fragments.map(fragment => ({...fragment, pageUrl: page.url, pageTitle: page.title}))).sort(compareFragmentDifficulty);
+  const all = [...(result.fragments ?? [])].sort(compareFragmentDifficulty);
   const sourceLabel = value => String(value ?? '').replace(/^local-html:\/\//, t('Archivo HTML local: ', 'Local HTML file: '));
   const table = (headers, rows) => `<table><thead><tr>${headers.map(h=>`<th>${e(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(v=>`<td>${e(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-  const pageData = table(['ID',t('Página o archivo','Page or file'),t('Estado','Status'),t('Fragmentos','Fragments'),t('Media','Mean'),t('Categoría','Category')], result.pages.map(p=>[p.pageId,sourceLabel(p.url),p.status === 'analyzed' ? t('analizada','analyzed') : p.status === 'discarded' ? t('descartada','discarded') : p.status === 'duplicate' ? t('contenido duplicado excluido','duplicate content excluded') : p.status === 'error' ? t('error','error') : p.status,p.fragments.length,p.score,p.status === 'analyzed' ? severityForReading(p.score, p.level).action : '-']));
+  const pageData = table(['ID',t('Página o archivo','Page or file'),t('Estado','Status'),t('Fragmentos','Fragments'),t('Media','Mean'),t('Categoría','Category')], result.pages.map(p=>[p.pageId,sourceLabel(p.url),p.status === 'analyzed' ? t('analizada','analyzed') : p.status === 'discarded' ? t('descartada','discarded') : p.status === 'duplicate' ? t('contenido duplicado excluido','duplicate content excluded') : p.status === 'error' ? t('error','error') : p.status,p.fragmentCount ?? p.fragments.length,p.score,p.status === 'analyzed' ? severityForReading(p.score, p.level).action : '-']));
   const coverage = result.criteria?.coverage;
   const coverageData = coverage ? table([t('Dominio','Domain'),t('Descubiertas','Discovered'),t('Elegibles','Eligible'),t('Analizadas','Analyzed'),t('Excluidas por idioma','Excluded by language'),t('Excluidas por robots','Excluded by robots'),t('Secciones','Sections'),t('Cobertura','Coverage')], result.domains.map(domain => [domain.domain,domain.candidatesDetected,domain.eligibleCandidates,domain.analyzedPages ?? '-',domain.languageExcludedPages ?? 0,domain.excludedCandidates ?? 0,domain.sections?.length ?? '-',domain.partialReasons?.length ? t('Parcial: ','Partial: ')+coverageReasonText(domain.partialReasons) : t('Dentro de los límites','Within stated limits')])) : '';
   const references = result.language === 'es'
@@ -2124,7 +2135,7 @@ document.addEventListener('click', event => {
     heading.textContent = popup.document.title;
     const pre = popup.document.createElement('pre');
     pre.style.cssText = 'white-space:pre-wrap;font:16px/1.6 Arial;max-width:900px;margin:24px';
-    pre.textContent = localSourceText || lastResult.pages.flatMap(page=>page.fragments.map(fragment=>fragment.text)).join('\n\n');
+    pre.textContent = localSourceText || (lastResult.fragments ?? []).map(fragment => fragment.text).join('\n\n');
     popup.document.body.append(heading, pre);
   }
 });

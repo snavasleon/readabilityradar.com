@@ -382,6 +382,14 @@ async function analyze(body, onProgress = () => {}) {
     })),
   );
   const fragments = fragmentLimit ? selectHardestFragments(allFragments, fragmentLimit) : allFragments.sort(compareFragmentDifficulty);
+  // Fragments are returned once, in the top-level collection. Keeping their
+  // full text again inside every page doubles large JSON responses and can make
+  // a browser unresponsive on comprehensive audits.
+  const resultPages = pages.map((page) => ({
+    ...page,
+    fragmentCount: page.fragments.length,
+    fragments: [],
+  }));
   const averageScore = analyzed.length
     ? round1(analyzed.reduce((sum, page) => sum + page.rawScore, 0) / analyzed.length)
     : null;
@@ -465,7 +473,7 @@ async function analyze(body, onProgress = () => {}) {
       includeRelatedSubdomains,
       coverage: domainDiscovery?.coverage ?? null,
     },
-    pages,
+    pages: resultPages,
     fragments,
   };
 }
