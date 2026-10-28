@@ -84,8 +84,9 @@ useful content is produced with JavaScript.
 ## Packaged local applications
 
 The release page provides the simplest route for participants: a Windows
-`.exe`, an unsigned macOS `.app` bundle and a Linux executable package. They
-are built from the same open source. Windows can be built locally with:
+`.exe`, an unsigned macOS Apple Silicon `.app` bundle and a Linux executable
+package. They are built from the same open source. The source-code option
+remains available for Intel Macs. Windows can be built locally with:
 
 ```text
 npm install

@@ -20,10 +20,6 @@ jobs:
             os: windows-latest
             script: build:windows
             artifact: Web-Readability-Radar.exe
-          - label: macOS Intel
-            os: macos-13
-            script: build:macos-intel
-            artifact: Web-Readability-Radar-macos-intel.app.zip
           - label: macOS Apple Silicon
             os: macos-14
             script: build:macos-apple-silicon

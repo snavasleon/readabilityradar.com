@@ -4,10 +4,9 @@
 
 Download the macOS edition from the project's
 [latest release](https://github.com/snavasleon/readabilityradar.com/releases/latest).
-Choose the package that matches your computer:
-
-- **Apple Silicon** for M-series Macs (M1, M2, M3, M4 and later).
-- **Intel** for earlier Intel Macs.
+Choose **Apple Silicon** for M-series Macs (M1, M2, M3, M4 and later).
+For an earlier Intel Mac, use the source-code option below while the packaged
+Intel edition is not published.
 
 Extract the downloaded ZIP and open **Web Readability Radar.app**. Keep it
 open while using **Full analysis on this computer** at
