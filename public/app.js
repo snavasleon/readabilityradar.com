@@ -706,12 +706,12 @@ async function findLocalEngine() {
   return results.find(Boolean) ?? null;
 }
 
-// Chrome 142+ asks for an explicit, user-granted Local Network Access permission
-// before a public site can talk to an application on this computer.  This option
-// tells Chrome that localhost is the intended destination, so it can show that
-// prompt instead of treating the connection as an unsolicited network request.
+// Chrome protects connections from a public page to software on the same
+// computer. 127.0.0.1 is a *loopback* destination (not a LAN destination), so
+// declaring that exact address space is essential: Chrome can then show its
+// permission prompt instead of rejecting the connection before the request.
 function fetchLocalEngine(url, options = {}) {
-  return fetch(url, { ...options, targetAddressSpace: 'local', signal: options.signal ?? AbortSignal.timeout(900) });
+  return fetch(url, { ...options, targetAddressSpace: 'loopback', signal: options.signal ?? AbortSignal.timeout(900) });
 }
 
 function completeSampleLabel() {
