@@ -625,19 +625,19 @@ function showAnalysisLanguageDialog() {
 function showExecutionModeDialog() {
   const isSpanish = language === 'es';
   const download = localEngineDownload();
-  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'Elige la modalidad' : 'Choose a mode';
-  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Empieza con un análisis rápido' : 'Start with a quick analysis';
+  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'ELIGE CÓMO EMPEZAR' : 'CHOOSE HOW TO START';
+  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Puedes empezar ahora' : 'You can start now';
   document.querySelector('#executionModeText').textContent = isSpanish
-    ? 'Puedes empezar ahora, sin instalar nada.'
-    : 'You can start now, without installing anything.';
+    ? 'Haz un análisis rápido o amplía la capacidad cuando lo necesites.'
+    : 'Run a quick analysis or expand capacity when you need it.';
   onlineModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis rápido</strong><span>Empieza sin instalar nada. Ideal para una primera revisión de hasta 30 páginas.</span>'
-    : '<strong>Quick analysis</strong><span>Start without installing anything. Best for an initial review of up to 30 pages.</span>';
+    ? '<strong>Análisis rápido</strong><span>Empieza al instante, sin instalar nada. Una primera revisión de hasta 30 páginas.</span>'
+    : '<strong>Quick analysis</strong><span>Start instantly, without installing anything. An initial review of up to 30 pages.</span>';
   localDownloadButton.href = download.href;
-  localDownloadButton.textContent = isSpanish ? `Análisis completo · ${download.es}` : `Full analysis · ${download.en}`;
+  localDownloadButton.textContent = isSpanish ? `O bien, activa el análisis completo · ${download.es}` : `Or activate full analysis · ${download.en}`;
   executionModeStatus.innerHTML = isSpanish
-    ? '<strong>¿Necesitas analizar un sitio completo?</strong> Descarga y abre la aplicación gratuita. Usa la potencia de tu ordenador, pero <strong>sigues usando esta misma página web</strong>; los resultados aparecerán aquí.'
-    : '<strong>Need to analyse a complete website?</strong> Download and open the free application. It uses your computer’s power, but <strong>you keep using this same web page</strong>; results appear here.';
+    ? '<strong>¿Necesitas ir más lejos?</strong> Descarga y abre la aplicación gratuita. Analiza sitios grandes, sitemaps y contenido dinámico con la potencia de tu ordenador, pero <strong>sigues usando esta misma página web</strong>; los resultados aparecerán aquí.'
+    : '<strong>Need to go further?</strong> Download and open the free application. Analyse large websites, sitemaps and dynamic content using your computer’s power, but <strong>you keep using this same web page</strong>; results appear here.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
   watchForLocalEngine();
