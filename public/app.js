@@ -36,8 +36,8 @@ const STRINGS = {
     fast: 'Rápido',
     complete: 'Completo',
     portableLimit: 'Rápido: muestra estratificada de páginas y hasta 10 fragmentos más difíciles de esa muestra. Completo: todas las URLs elegibles detectables, hasta el máximo técnico de 10.000 candidatas.',
-    samplingSettings: 'Ajustes del análisis',
-    settingsHelp: 'Rápido selecciona una muestra representativa de páginas elegibles y explora enlaces internos hasta tres niveles o 120 páginas por dominio. Completo analiza todas las URLs elegibles detectables mediante enlaces internos y sitemaps, sin límite interno de profundidad, hasta el máximo técnico de 10.000 candidatas. Las restricciones de robots.txt, los errores de acceso y cualquier cobertura parcial aparecen en el resultado.',
+    samplingSettings: 'Ajustes de extracción',
+    settingsHelp: 'Estos dos ajustes opcionales determinan qué textos entran en el análisis. Puedes dejarlos como están.',
     sampleSize: 'Alcance',
     minWords: 'Palabras pág.',
     minFragmentWords: 'Palabras frag.',
@@ -183,8 +183,8 @@ const STRINGS = {
     fast: 'Fast',
     complete: 'Complete',
     portableLimit: 'Fast: stratified page sample and up to 10 hardest fragments from that sample. Complete: all eligible detectable URLs, up to the technical maximum of 10,000 candidates.',
-    samplingSettings: 'Analysis settings',
-    settingsHelp: 'Fast selects a representative sample of eligible pages and follows internal links for up to three levels or 120 pages per domain. Complete analyzes all eligible URLs detectable through internal links and sitemaps, with no internal depth limit, up to the technical maximum of 10,000 candidates. robots.txt restrictions, access errors, and any partial coverage are shown in the result.',
+    samplingSettings: 'Extraction settings',
+    settingsHelp: 'These optional settings determine which texts enter the analysis. You can leave them unchanged.',
     sampleSize: 'Scope',
     minWords: 'Page words',
     minFragmentWords: 'Fragment words',
@@ -786,19 +786,13 @@ function completeSampleLabel() {
 
 function syncIntensityField() {
   if (cloudflareFreeEdition && executionMode !== 'local') {
-    maxPagesInput.type = 'number';
     if (quickHomeMode) {
       maxPagesInput.value = '1';
       maxPagesInput.disabled = true;
       return;
     }
-    if (intensity === 'complete') {
-      maxPagesInput.value = '30';
-      maxPagesInput.disabled = true;
-    } else {
-      if (!/^\d+$/.test(maxPagesInput.value) || Number(maxPagesInput.value) > 30) maxPagesInput.value = '12';
-      maxPagesInput.disabled = analysisRunning || scope === 'page';
-    }
+    maxPagesInput.value = searchVisibilityMode ? '20' : (scope === 'page' ? '1' : '30');
+    maxPagesInput.disabled = true;
     return;
   }
   if (intensity === 'complete') {

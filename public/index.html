@@ -83,33 +83,13 @@
               <p class="hint" data-i18n="includeSubdomainsHint">Off by default. Includes only hosts under the same registered domain.</p>
             </div>
 
-            <div class="control-block">
-              <p class="label-row">
-                <span data-i18n="intensity">Analysis intensity</span>
-                <span class="info-dot" data-i18n-title="intensityHelp">i</span>
-              </p>
-              <div class="choice-grid compact">
-                <button class="choice active" type="button" data-intensity="fast">
-                  <span data-i18n="fast">Fast</span>
-                </button>
-                <button class="choice" type="button" data-intensity="complete">
-                  <span data-i18n="complete">Complete</span>
-                </button>
-              </div>
-              <p class="hint" data-i18n="portableLimit">Domain: random page sample and its 10 hardest fragments. One page or HTML: up to 10 fragments from that content.</p>
-            </div>
-
-            <details class="settings" open>
+            <details class="settings">
               <summary>
                 <span data-i18n="samplingSettings">Analysis settings</span>
                 <span class="info-dot" data-i18n-title="settingsHelp">i</span>
               </summary>
               <div class="settings-grid">
-                <label class="number-field sample-size-field">
-                  <span data-i18n="sampleSize">Scope</span>
-                  <input id="maxPages" type="number" min="1" max="10000" value="12" required />
-                  <small class="input-limits">1–10000</small>
-                </label>
+                <input id="maxPages" type="hidden" value="20" />
                 <label class="number-field">
                   <span data-i18n="minWords">Page words</span>
                   <input id="minWords" type="number" min="20" max="2000" value="80" required />
