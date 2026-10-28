@@ -333,6 +333,7 @@ let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
 let searchVisibilityMode = false;
+let quickHomeMode = false;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
@@ -429,6 +430,11 @@ onlineModeButton.addEventListener('click', () => {
   executionMode = 'online';
   localEngineBase = null;
   searchVisibilityMode = false;
+  quickHomeMode = true;
+  inputSource = 'url';
+  scope = 'domain';
+  intensity = 'fast';
+  intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === 'fast'));
   finishIntroduction();
 });
 
@@ -438,6 +444,7 @@ searchModeButton.addEventListener('click', () => {
   executionMode = 'online';
   localEngineBase = null;
   searchVisibilityMode = true;
+  quickHomeMode = false;
   inputSource = 'url';
   scope = 'domain';
   intensity = 'complete';
@@ -450,6 +457,7 @@ searchModeButton.addEventListener('click', () => {
 scopeButtons.forEach((button) => {
   button.addEventListener('click', () => {
     searchVisibilityMode = false;
+    quickHomeMode = false;
     inputSource = button.dataset.scope === 'html' ? 'html' : 'url';
     scope = button.dataset.scope === 'domain' ? 'domain' : 'page';
     if (inputSource !== 'html') htmlFile.value = '';
@@ -548,6 +556,8 @@ function syncScope() {
     : scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
   document.querySelector('#mainInputHint').textContent = searchVisibilityMode
     ? (language === 'es' ? 'La herramienta localizará automáticamente hasta 20 URLs del dominio en un índice público de la web.' : 'The tool will automatically find up to 20 domain URLs in a public web index.')
+    : quickHomeMode
+      ? (language === 'es' ? 'Se analizará solo la página principal del dominio.' : 'Only the domain home page will be analysed.')
     : scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
   estimateButton.querySelector('span:last-child').textContent = inputSource === 'html' ? dictionary.prepareHtml : scope === 'page' ? dictionary.preparePage : dictionary.estimate;
   syncIntensityField();
@@ -652,14 +662,14 @@ function showExecutionModeDialog() {
     ? 'Ambas opciones se analizan directamente en esta web.'
     : 'Both options are analysed directly in this website.';
   onlineModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis rápido del dominio</strong><span>La herramienta localiza automáticamente hasta 30 páginas enlazadas desde la página inicial.</span>'
-    : '<strong>Quick domain analysis</strong><span>The tool automatically finds up to 30 pages linked from the home page.</span>';
+    ? '<strong>Análisis rápido</strong><span>Analiza solo la página principal del dominio. Ideal para una primera orientación.</span>'
+    : '<strong>Quick analysis</strong><span>Analyses only the domain home page. Ideal for a first overview.</span>';
   searchModeButton.innerHTML = isSpanish
-    ? '<strong>Páginas publicadas e indexadas</strong><span>La herramienta localiza hasta 20 URLs del dominio en el índice público Common Crawl.</span>'
-    : '<strong>Published and indexed pages</strong><span>The tool finds up to 20 domain URLs in the public Common Crawl index.</span>';
+    ? '<strong>Páginas principales del dominio</strong><span>Localiza automáticamente hasta 20 páginas públicas para una revisión más representativa.</span>'
+    : '<strong>Main domain pages</strong><span>Automatically finds up to 20 public pages for a more representative review.</span>';
   executionModeStatus.innerHTML = isSpanish
-    ? '<strong>Nota metodológica:</strong> esta muestra refleja URLs presentes en un índice público de la web; no equivale a visitas reales ni a datos de analítica.'
-    : '<strong>Methodological note:</strong> this sample reflects URLs in a public web index; it is not equivalent to real visits or analytics data.';
+    ? '<strong>Nota metodológica:</strong> la muestra reúne páginas públicas detectables del dominio; no equivale a visitas reales ni a datos de analítica.'
+    : '<strong>Methodological note:</strong> the sample brings together detectable public pages from the domain; it is not equivalent to real visits or analytics data.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
 }
@@ -718,7 +728,11 @@ function updateEngineStatus() {
   engineStatus.hidden = false;
   engineStatus.textContent = executionMode === 'local'
     ? (language === 'es' ? '● Motor completo conectado en este ordenador · capacidad local' : '● Full local engine connected on this computer · local capacity')
-    : (language === 'es' ? '● Modo rápido en línea · hasta 30 páginas HTML' : '● Quick online mode · up to 30 HTML pages');
+    : quickHomeMode
+      ? (language === 'es' ? '● Análisis rápido en línea · página principal' : '● Quick online analysis · home page')
+      : searchVisibilityMode
+        ? (language === 'es' ? '● Muestra ampliada en línea · hasta 20 páginas' : '● Extended online sample · up to 20 pages')
+        : (language === 'es' ? '● Modo en línea · hasta 30 páginas HTML' : '● Online mode · up to 30 HTML pages');
 }
 
 async function findLocalEngine() {
@@ -753,6 +767,11 @@ function completeSampleLabel() {
 function syncIntensityField() {
   if (cloudflareFreeEdition && executionMode !== 'local') {
     maxPagesInput.type = 'number';
+    if (quickHomeMode) {
+      maxPagesInput.value = '1';
+      maxPagesInput.disabled = true;
+      return;
+    }
     if (intensity === 'complete') {
       maxPagesInput.value = '30';
       maxPagesInput.disabled = true;
@@ -839,13 +858,13 @@ async function runAnalysis(estimateOnly) {
     const searchVisibleUrls = searchVisibilityMode ? await findIndexedPageUrls(enteredInput) : null;
     const requestBody = {
       language: analysisLanguage,
-      scope: searchVisibilityMode ? 'page' : scope,
+      scope: (searchVisibilityMode || quickHomeMode) ? 'page' : scope,
       input: searchVisibleUrls ?? enteredInput,
-      exactUrls: searchVisibilityMode ? '' : (scope === 'domain' ? exactUrls.value : ''),
-      includeRelatedSubdomains: !searchVisibilityMode && scope === 'domain' && includeSubdomains.checked,
+      exactUrls: (searchVisibilityMode || quickHomeMode) ? '' : (scope === 'domain' ? exactUrls.value : ''),
+      includeRelatedSubdomains: !searchVisibilityMode && !quickHomeMode && scope === 'domain' && includeSubdomains.checked,
       estimateOnly,
-      maxPages: searchVisibilityMode ? '20' : (cloudflareFreeEdition && !usingLocalEngine ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value))),
-      samplingMode: searchVisibilityMode ? 'all' : (cloudflareFreeEdition && !usingLocalEngine ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all')),
+      maxPages: searchVisibilityMode ? '20' : (quickHomeMode ? '1' : (cloudflareFreeEdition && !usingLocalEngine ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value)))),
+      samplingMode: searchVisibilityMode ? 'all' : (quickHomeMode ? 'all' : (cloudflareFreeEdition && !usingLocalEngine ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'))),
       fragmentLimit: searchVisibilityMode ? null : (intensity === 'fast' ? 'top10' : null),
       minWords: document.querySelector('#minWords').value,
       minFragmentWords: document.querySelector('#minFragmentWords').value,
