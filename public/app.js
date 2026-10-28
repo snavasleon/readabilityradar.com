@@ -332,8 +332,8 @@ function localEngineDownload() {
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
-let searchVisibilityMode = false;
-let quickHomeMode = true;
+let searchVisibilityMode = true;
+let quickHomeMode = false;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
@@ -538,7 +538,7 @@ tabs.addEventListener('click', (event) => {
 
 function syncScope() {
   const dictionary = STRINGS[language];
-  const activeSource = inputSource === 'html' ? 'html' : searchVisibilityMode ? 'sample' : quickHomeMode ? 'quick' : scope;
+  const activeSource = inputSource === 'html' ? 'html' : searchVisibilityMode ? 'sample' : scope;
   scopeButtons.forEach((button) => {
     const active = button.dataset.mode === activeSource;
     button.classList.toggle('active', active);
@@ -556,10 +556,10 @@ function syncScope() {
   document.querySelectorAll('.page-only').forEach((item) => item.classList.toggle('hidden', scope !== 'page'));
   document.querySelector('.sample-size-field')?.classList.toggle('hidden', scope === 'page');
   document.querySelector('#mainInputLabel').textContent = searchVisibilityMode
-    ? (language === 'es' ? 'Dominio para buscar' : 'Domain to search')
+    ? (language === 'es' ? 'Dominio inicial' : 'Starting domain')
     : scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
   document.querySelector('#mainInputHint').textContent = searchVisibilityMode
-    ? (language === 'es' ? 'La herramienta localizará automáticamente hasta 20 URLs del dominio en un índice público de la web.' : 'The tool will automatically find up to 20 domain URLs in a public web index.')
+    ? (language === 'es' ? 'La herramienta localizará automáticamente hasta 20 páginas públicas del dominio.' : 'The tool will automatically find up to 20 public pages from the domain.')
     : quickHomeMode
       ? (language === 'es' ? 'Se analizará solo la página principal del dominio.' : 'Only the domain home page will be analysed.')
     : scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
@@ -571,9 +571,8 @@ function syncScope() {
 function renderModeChoices() {
   const es = language === 'es';
   const copy = {
-    quick: es ? ['Análisis rápido', 'Solo la página principal.'] : ['Quick analysis', 'The home page only.'],
     sample: es ? ['Páginas principales', 'Hasta 20 páginas públicas.'] : ['Main pages', 'Up to 20 public pages.'],
-    page: es ? ['Una página concreta', 'Analiza una URL que indiques.'] : ['One specific page', 'Analyse a URL you provide.'],
+    page: es ? ['Una página web', 'Analiza una URL o la portada de un dominio.'] : ['One web page', 'Analyse a URL or a domain home page.'],
     html: es ? ['Archivo HTML', 'Analiza un archivo de tu equipo.'] : ['HTML file', 'Analyse a file from your computer.'],
   };
   scopeButtons.forEach((button) => {
