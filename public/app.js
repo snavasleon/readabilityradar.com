@@ -323,17 +323,12 @@ function localEngineDownload() {
   }
   if (/macintosh|mac os x|macintel/i.test(agent)) {
     // Browsers commonly identify both Intel and Apple Silicon Macs as
-    // "MacIntel". The packaged edition currently targets Apple Silicon;
-    // the release page remains the honest fallback for unknown hardware.
+    // "MacIntel". The packaged edition currently targets Apple Silicon.
     return { href: LOCAL_ENGINE_FILES.macos, es: 'Descargar aplicación para Mac', en: 'Download app for Mac' };
   }
   return { href: RELEASES_PAGE, es: 'Ver descargas disponibles', en: 'View available downloads' };
 }
 
-function localEngineDownloadLink(isSpanish) {
-  const download = localEngineDownload();
-  return `<a href="${download.href}">${isSpanish ? download.es : download.en}</a>`;
-}
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
@@ -373,6 +368,7 @@ const privacyAccept = document.querySelector('#privacyAccept');
 const analysisLanguageAccept = document.querySelector('#analysisLanguageAccept');
 const onlineModeButton = document.querySelector('#onlineModeButton');
 const localModeButton = document.querySelector('#localModeButton');
+const localDownloadButton = document.querySelector('#localDownloadButton');
 const executionModeStatus = document.querySelector('#executionModeStatus');
 const engineStatus = document.querySelector('#engineStatus');
 
@@ -442,9 +438,12 @@ localModeButton.addEventListener('click', async () => {
   executionModeStatus.textContent = language === 'es' ? 'Buscando el motor local en este ordenador…' : 'Looking for the local engine on this computer…';
   const base = await findLocalEngine();
   if (!base) {
+    const download = localEngineDownload();
     executionModeStatus.innerHTML = language === 'es'
-      ? `Aún no se ha podido conectar con la aplicación local. Déjala abierta: la web seguirá detectándola automáticamente. Si Chrome muestra una petición de acceso a la red local, selecciónala como permitida. ${localEngineDownloadLink(true)}`
-      : `The local application could not be reached yet. Leave it open: the page will keep detecting it automatically. If Chrome asks for Local Network access, allow it. ${localEngineDownloadLink(false)}`;
+      ? `Todavía no está abierta la aplicación completa. Descárgala y ábrela: <strong>seguirás en esta misma web</strong> y esta ventana se cerrará sola al detectarla.`
+      : `The full application is not open yet. Download and open it: <strong>you will continue in this same website</strong>, and this window will close automatically when it is detected.`;
+    localDownloadButton.href = download.href;
+    localDownloadButton.focus();
     return;
   }
   localEngineBase = base;
@@ -646,21 +645,23 @@ function showAnalysisLanguageDialog() {
 
 function showExecutionModeDialog() {
   const isSpanish = language === 'es';
-  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'Capacidad de análisis' : 'Analysis capacity';
-  document.querySelector('#executionModeTitle').textContent = isSpanish ? '¿Cómo quieres realizar el análisis?' : 'How would you like to run the analysis?';
+  const download = localEngineDownload();
+  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'Elige la modalidad' : 'Choose a mode';
+  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Empieza ahora o amplía el análisis' : 'Start now or expand the analysis';
   document.querySelector('#executionModeText').textContent = isSpanish
-    ? 'Puedes usar la versión web inmediata o conectar el motor local gratuito para una auditoría completa.'
-    : 'You can use the immediate web edition or connect the free local engine for a full audit.';
+    ? 'Los resultados se mostrarán siempre en esta misma web.'
+    : 'Results will always appear here, on this same website.';
   onlineModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis rápido en línea</strong><span>Hasta 30 páginas con HTML disponible. No requiere instalación.</span>'
-    : '<strong>Quick online analysis</strong><span>Up to 30 pages with available HTML. No installation required.</span>';
+    ? '<strong>Análisis rápido</strong><span>Empieza sin instalar nada. Ideal para una primera revisión de hasta 30 páginas.</span>'
+    : '<strong>Quick analysis</strong><span>Start without installing anything. Best for an initial review of up to 30 pages.</span>';
   localModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Chrome te pedirá permiso para conectar con la aplicación local.</span>'
-    : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Chrome will ask permission to connect to the local application.</span>';
-  executionModeStatus.textContent = isSpanish
-    ? 'Descarga y abre la aplicación gratuita para tu sistema. Esta ventana se cerrará automáticamente al detectarla. Chrome puede solicitar permiso para conectarla. No se conecta a otros dispositivos de tu red.'
-    : 'Download and open the free application for your system. This window will close automatically when it is detected. Chrome may ask permission to connect to it. It does not connect to other devices on your network.';
-  executionModeStatus.innerHTML += ` ${localEngineDownloadLink(isSpanish)}`;
+    ? '<strong>Análisis completo</strong><span>Para auditorías amplias. Usa la potencia de tu ordenador: hasta 10.000 páginas, sitemaps y contenido dinámico.</span>'
+    : '<strong>Full analysis</strong><span>For broad audits. Uses your computer’s power: up to 10,000 pages, sitemaps and dynamic content.</span>';
+  localDownloadButton.href = download.href;
+  localDownloadButton.textContent = isSpanish ? download.es : download.en;
+  executionModeStatus.innerHTML = isSpanish
+    ? '<strong>¿Quieres el análisis completo?</strong> Descarga y abre la aplicación gratuita. Trabaja en segundo plano en tu ordenador, pero <strong>sigues usando esta misma página web</strong>. La ventana se cerrará automáticamente al conectarse.'
+    : '<strong>Want the full analysis?</strong> Download and open the free application. It works in the background on your computer, but <strong>you keep using this same web page</strong>. This window closes automatically when it connects.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
   watchForLocalEngine();

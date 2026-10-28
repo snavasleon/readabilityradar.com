@@ -1773,3 +1773,4 @@ details { margin: 14px 0; } summary { cursor: pointer; font-weight: 600; }
 .execution-mode-card:hover, .execution-mode-card:focus-visible { border-color: #1e536b; background: #eef6f8; outline: 2px solid transparent; }
 .execution-mode-card strong { display: block; margin-bottom: 4px; font-size: 1rem; }
 .execution-mode-card span { display: block; color: #4a5f63; font-size: 0.88rem; line-height: 1.45; }
+.local-download-button { width: 100%; margin: 2px 0 13px; text-decoration: none; }
