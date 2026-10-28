@@ -252,15 +252,19 @@ h3 {
 }
 
 .choice-grid.source-choices {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .source-choices .choice {
-  flex-direction: column;
-  gap: 5px;
-  padding: 8px 4px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
   min-width: 0;
 }
+
+.source-choices .choice > span:first-child { font-size: 1.1rem; }
+.source-choices .choice strong, .source-choices .choice small { display: block; text-align: left; }
+.source-choices .choice small { margin-top: 3px; color: #586b6e; font-size: .76rem; line-height: 1.25; font-weight: 400; }
 
 #clearHtmlButton {
   margin-top: 8px;

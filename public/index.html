@@ -32,19 +32,11 @@
                 <span data-i18n="whatAnalyze">What do you want to analyze</span>
                 <span class="info-dot" data-i18n-title="whatAnalyzeHelp">i</span>
               </p>
-              <div class="choice-grid source-choices">
-                <button class="choice active" type="button" data-scope="domain">
-                  <span aria-hidden="true">🌐</span>
-                  <span data-i18n="domainMode">Domain</span>
-                </button>
-                <button class="choice" type="button" data-scope="page">
-                  <span aria-hidden="true">▧</span>
-                  <span data-i18n="pageMode">One page</span>
-                </button>
-                <button class="choice" type="button" data-scope="html">
-                  <span aria-hidden="true">&lt;/&gt;</span>
-                  <span data-i18n="localHtml">Local HTML</span>
-                </button>
+              <div class="choice-grid source-choices mode-choices">
+                <button class="choice active" type="button" data-mode="quick" data-scope="domain"><span aria-hidden="true">⚡</span><span><strong></strong><small></small></span></button>
+                <button class="choice" type="button" data-mode="sample" data-scope="domain"><span aria-hidden="true">🌐</span><span><strong></strong><small></small></span></button>
+                <button class="choice" type="button" data-mode="page" data-scope="page"><span aria-hidden="true">▧</span><span><strong></strong><small></small></span></button>
+                <button class="choice" type="button" data-mode="html" data-scope="html"><span aria-hidden="true">&lt;/&gt;</span><span><strong></strong><small></small></span></button>
               </div>
             </div>
 

@@ -333,7 +333,7 @@ let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
 let searchVisibilityMode = false;
-let quickHomeMode = false;
+let quickHomeMode = true;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
@@ -421,8 +421,9 @@ analysisLanguageAccept.addEventListener('click', async () => {
   analysisLanguage = selected?.value === 'en' ? 'en' : 'es';
   analysisLanguageConfirmed = true;
   analysisLanguageDialog.hidden = true;
-  if (cloudflareFreeEdition) await chooseAvailableEngine();
-  else finishIntroduction();
+  executionMode = 'online';
+  localEngineBase = null;
+  finishIntroduction();
 });
 
 onlineModeButton.addEventListener('click', () => {
@@ -456,10 +457,13 @@ searchModeButton.addEventListener('click', () => {
 
 scopeButtons.forEach((button) => {
   button.addEventListener('click', () => {
-    searchVisibilityMode = false;
-    quickHomeMode = false;
-    inputSource = button.dataset.scope === 'html' ? 'html' : 'url';
-    scope = button.dataset.scope === 'domain' ? 'domain' : 'page';
+    const mode = button.dataset.mode;
+    searchVisibilityMode = mode === 'sample';
+    quickHomeMode = mode === 'quick';
+    inputSource = mode === 'html' ? 'html' : 'url';
+    scope = (mode === 'page' || mode === 'html') ? 'page' : 'domain';
+    intensity = mode === 'quick' ? 'fast' : 'complete';
+    intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === intensity));
     if (inputSource !== 'html') htmlFile.value = '';
     syncScope();
     resetResults();
@@ -534,9 +538,9 @@ tabs.addEventListener('click', (event) => {
 
 function syncScope() {
   const dictionary = STRINGS[language];
-  const activeSource = inputSource === 'html' ? 'html' : scope;
+  const activeSource = inputSource === 'html' ? 'html' : searchVisibilityMode ? 'sample' : quickHomeMode ? 'quick' : scope;
   scopeButtons.forEach((button) => {
-    const active = button.dataset.scope === activeSource;
+    const active = button.dataset.mode === activeSource;
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
@@ -561,6 +565,22 @@ function syncScope() {
     : scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
   estimateButton.querySelector('span:last-child').textContent = inputSource === 'html' ? dictionary.prepareHtml : scope === 'page' ? dictionary.preparePage : dictionary.estimate;
   syncIntensityField();
+  renderModeChoices();
+}
+
+function renderModeChoices() {
+  const es = language === 'es';
+  const copy = {
+    quick: es ? ['Análisis rápido', 'Solo la página principal.'] : ['Quick analysis', 'The home page only.'],
+    sample: es ? ['Páginas principales', 'Hasta 20 páginas públicas.'] : ['Main pages', 'Up to 20 public pages.'],
+    page: es ? ['Una página concreta', 'Analiza una URL que indiques.'] : ['One specific page', 'Analyse a URL you provide.'],
+    html: es ? ['Archivo HTML', 'Analiza un archivo de tu equipo.'] : ['HTML file', 'Analyse a file from your computer.'],
+  };
+  scopeButtons.forEach((button) => {
+    const [title, description] = copy[button.dataset.mode];
+    button.querySelector('strong').textContent = title;
+    button.querySelector('small').textContent = description;
+  });
 }
 
 function resetResults() {
