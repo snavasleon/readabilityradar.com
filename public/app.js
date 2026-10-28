@@ -311,6 +311,8 @@ let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
 let localEngineBase = null;
+let localEngineWatcher = null;
+let localEngineChecking = false;
 let scope = 'domain';
 let inputSource = 'url';
 let analysisRunning = false;
@@ -397,6 +399,7 @@ analysisLanguageAccept.addEventListener('click', async () => {
 });
 
 onlineModeButton.addEventListener('click', () => {
+  stopWatchingForLocalEngine();
   executionMode = 'online';
   localEngineBase = null;
   finishIntroduction();
@@ -624,10 +627,11 @@ function showExecutionModeDialog() {
     ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Chrome te pedirá permiso para conectar con la aplicación local.</span>'
     : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Chrome will ask permission to connect to the local application.</span>';
   executionModeStatus.textContent = isSpanish
-    ? 'Primera vez: descarga y abre la aplicación para Windows. Después, Chrome solicitará tu permiso para detectarla. No se conecta a otros dispositivos de tu red.'
-    : 'First time: download and open the Windows application. Chrome will then request permission to detect it. It does not connect to other devices on your network.';
+    ? 'Abre la aplicación gratuita para Windows y esta ventana se cerrará automáticamente al detectarla. Chrome puede solicitar permiso para conectarla. No se conecta a otros dispositivos de tu red.'
+    : 'Open the free Windows application and this window will close automatically when it is detected. Chrome may ask permission to connect to it. It does not connect to other devices on your network.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
+  watchForLocalEngine();
 }
 
 async function chooseAvailableEngine() {
@@ -645,11 +649,38 @@ async function chooseAvailableEngine() {
 }
 
 function finishIntroduction() {
+  stopWatchingForLocalEngine();
   executionModeDialog.hidden = true;
   document.querySelector('main').inert = false;
   updateEngineStatus();
   syncScope();
   inputUrls.focus();
+}
+
+function stopWatchingForLocalEngine() {
+  if (localEngineWatcher !== null) {
+    window.clearInterval(localEngineWatcher);
+    localEngineWatcher = null;
+  }
+}
+
+function watchForLocalEngine() {
+  stopWatchingForLocalEngine();
+  const connectWhenReady = async () => {
+    if (localEngineChecking || executionModeDialog.hidden) return;
+    localEngineChecking = true;
+    try {
+      const base = await findLocalEngine();
+      if (!base) return;
+      localEngineBase = base;
+      executionMode = 'local';
+      finishIntroduction();
+    } finally {
+      localEngineChecking = false;
+    }
+  };
+  void connectWhenReady();
+  localEngineWatcher = window.setInterval(() => void connectWhenReady(), 1200);
 }
 
 function updateEngineStatus() {
@@ -676,7 +707,7 @@ async function findLocalEngine() {
 // tells Chrome that localhost is the intended destination, so it can show that
 // prompt instead of treating the connection as an unsolicited network request.
 function fetchLocalEngine(url, options = {}) {
-  return fetch(url, { ...options, targetAddressSpace: 'local' });
+  return fetch(url, { ...options, targetAddressSpace: 'local', signal: options.signal ?? AbortSignal.timeout(900) });
 }
 
 function completeSampleLabel() {
