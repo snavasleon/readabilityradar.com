@@ -1,6 +1,31 @@
 # Web Readability Radar
 
-Open-source web readability analysis for Spanish and English.
+**Open-source web readability analysis for Spanish and English.**
+
+[Use the web tool](https://readabilityradar.com) · [Download the Windows app](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+
+Web Readability Radar identifies complete text blocks on webpages and assesses
+their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
+English analysis uses **Flesch Reading Ease**. It is designed for transparent,
+reproducible accessibility and readability audits.
+
+> **En español.** Herramienta abierta para analizar la legibilidad de páginas
+> web en español e inglés. La edición completa se ejecuta en el ordenador de
+> cada persona: no requiere un servidor de pago ni envía los textos analizados
+> a un servicio externo.
+
+## Start here
+
+| If you want to… | Choose this |
+| --- | --- |
+| Check a small website immediately, without installing anything | [Web edition](https://readabilityradar.com) |
+| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Windows full edition (.exe)](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe) |
+| Inspect, reproduce or modify the project | Download this repository and run the local edition |
+
+For the Windows full edition, download the `.exe`, open it and leave its small
+local-engine window running. Then use the website normally and choose **Full
+analysis on this computer**. The browser asks once for permission to connect
+only to that application on the same computer.
 
 ## Choose an edition
 

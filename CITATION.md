@@ -7,5 +7,6 @@ with the project authors and add the final release version.
 Suggested format:
 
 > Web Readability Radar contributors. (2026). *Web Readability Radar*
-> (Version X.Y.Z) [Computer software]. GitHub. https://github.com/OWNER/web-readability-radar
+> (Version X.Y.Z) [Computer software]. GitHub.
+> https://github.com/MagicoutFIT/lecturabilidadradar.com
 
