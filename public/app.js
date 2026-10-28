@@ -333,6 +333,7 @@ let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
 let searchVisibilityMode = false;
+let searchVisibilityQuota = null;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
@@ -433,6 +434,7 @@ onlineModeButton.addEventListener('click', () => {
 });
 
 searchModeButton.addEventListener('click', () => {
+  if (searchModeButton.disabled) return;
   stopWatchingForLocalEngine();
   executionMode = 'online';
   localEngineBase = null;
@@ -661,7 +663,45 @@ function showExecutionModeDialog() {
     : '<strong>Methodological note:</strong> this sample reflects URLs visible in Brave Search at the time of the query; it is not equivalent to real visits or analytics data.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
-  watchForLocalEngine();
+  void refreshSearchVisibilityQuota();
+}
+
+function formatQuotaRenewal(value) {
+  try {
+    return new Intl.DateTimeFormat(language === 'es' ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(value));
+  } catch { return ''; }
+}
+
+function renderSearchVisibilityQuota() {
+  if (!cloudflareFreeEdition || !searchVisibilityQuota) return;
+  const isSpanish = language === 'es';
+  const renewsAt = formatQuotaRenewal(searchVisibilityQuota.renewsAt);
+  const available = searchVisibilityQuota.enabled && searchVisibilityQuota.remaining > 0;
+  searchModeButton.disabled = !available;
+  const copy = !searchVisibilityQuota.enabled
+    ? (isSpanish ? 'La selección automática estará disponible próximamente.' : 'Automatic selection will be available soon.')
+    : available
+      ? (isSpanish ? `<strong>${searchVisibilityQuota.remaining} búsquedas disponibles</strong><span>Hasta ${renewsAt}. Localiza automáticamente hasta 20 páginas visibles del dominio en buscadores.</span>` : `<strong>${searchVisibilityQuota.remaining} searches available</strong><span>Until ${renewsAt}. Automatically finds up to 20 search-visible pages for the domain.</span>`)
+      : (isSpanish ? `<strong>La muestra de buscadores se reanudará el ${renewsAt}</strong><span>Mientras tanto puedes analizar la portada del dominio o una página concreta.</span>` : `<strong>Search-visible sampling resumes on ${renewsAt}</strong><span>Meanwhile, analyse the domain home page or a specific page.</span>`);
+  searchModeButton.innerHTML = copy;
+  if (!available && searchVisibilityQuota.enabled) {
+    executionModeStatus.innerHTML = isSpanish
+      ? `<strong>Alternativas disponibles:</strong> análisis rápido de la portada del dominio o análisis de una página concreta.`
+      : `<strong>Available alternatives:</strong> quick home-page analysis or analysis of one specific page.`;
+  }
+}
+
+async function refreshSearchVisibilityQuota() {
+  try {
+    const response = await fetch('/api/search-visible-status', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok) return;
+    searchVisibilityQuota = data;
+    renderSearchVisibilityQuota();
+  } catch {
+    // The regular quick analysis remains available even if the optional service
+    // status cannot be read.
+  }
 }
 
 async function chooseAvailableEngine() {
@@ -783,9 +823,10 @@ async function findSearchVisibleUrls(value) {
   const domains = String(value).split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
   if (domains.length !== 1) throw new Error(language === 'es' ? 'Introduce un único dominio para buscar.' : 'Enter one domain to search.');
   const response = await fetch('/api/search-visible', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ domain: domains[0] }),
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ domain: domains[0], language: analysisLanguage }),
   });
   const data = await response.json();
+  if (data.quota) searchVisibilityQuota = data.quota;
   if (!response.ok || !Array.isArray(data.urls) || !data.urls.length) {
     throw new Error(data.error || (language === 'es' ? 'No se encontraron páginas visibles en el buscador.' : 'No search-visible pages were found.'));
   }

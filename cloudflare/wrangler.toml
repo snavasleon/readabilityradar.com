@@ -7,6 +7,10 @@ directory = "../public"
 binding = "ASSETS"
 run_worker_first = ["/api/*"]
 
+[[kv_namespaces]]
+binding = "SEARCH_QUOTA"
+id = "75287979e8e34197bd6325fbc8145486"
+
 [[routes]]
 pattern = "readabilityradar.com"
 custom_domain = true
