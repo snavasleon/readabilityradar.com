@@ -695,7 +695,7 @@ function updateEngineStatus() {
 async function findLocalEngine() {
   const probes = LOCAL_ENGINE_CANDIDATES.map(async (base) => {
     try {
-      const response = await fetchLocalEngine(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store', mode: 'cors', credentials: 'omit' });
+      const response = await fetchLocalEngine(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store', mode: 'cors', credentials: 'omit', timeoutMs: 900 });
       const status = await response.json();
       return response.ok && status.bridge === 'web-readability-radar-local' ? base : null;
     } catch {
@@ -710,8 +710,11 @@ async function findLocalEngine() {
 // computer. 127.0.0.1 is a *loopback* destination (not a LAN destination), so
 // declaring that exact address space is essential: Chrome can then show its
 // permission prompt instead of rejecting the connection before the request.
-function fetchLocalEngine(url, options = {}) {
-  return fetch(url, { ...options, targetAddressSpace: 'loopback', signal: options.signal ?? AbortSignal.timeout(900) });
+function fetchLocalEngine(url, { timeoutMs, ...options } = {}) {
+  // Only the short bridge probe has a timeout. Analysis requests can legitimately
+  // run for minutes while the local engine processes a complete domain.
+  const signal = options.signal ?? (Number.isFinite(timeoutMs) ? AbortSignal.timeout(timeoutMs) : undefined);
+  return fetch(url, { ...options, targetAddressSpace: 'loopback', ...(signal ? { signal } : {}) });
 }
 
 function completeSampleLabel() {
@@ -819,7 +822,7 @@ async function runAnalysis(estimateOnly) {
       const apiBase = usingLocalEngine ? localEngineBase : '';
       const request = `${apiBase}/api/analyze`;
       const response = usingLocalEngine ? await fetchLocalEngine(request, {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody),
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody), timeoutMs: 15_000,
       }) : await fetch(request, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(requestBody),
       });
@@ -830,7 +833,7 @@ async function runAnalysis(estimateOnly) {
         await new Promise((resolve) => window.setTimeout(resolve, 750));
         const statusUrl = `${apiBase}/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`;
         const statusResponse = usingLocalEngine
-          ? await fetchLocalEngine(statusUrl, { cache: 'no-store' })
+          ? await fetchLocalEngine(statusUrl, { cache: 'no-store', timeoutMs: 15_000 })
           : await fetch(statusUrl, { cache: 'no-store' });
         const status = await statusResponse.json();
         if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
