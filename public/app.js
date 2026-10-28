@@ -313,6 +313,7 @@ let executionMode = cloudflareFreeEdition ? 'online' : 'local';
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
+let pendingLocalJob = null;
 let scope = 'domain';
 let inputSource = 'url';
 let analysisRunning = false;
@@ -828,29 +829,12 @@ async function runAnalysis(estimateOnly) {
       });
       const started = await response.json();
       if (!response.ok || started.error) throw new Error(started.error || dictionary.error);
-      while (!payload) {
-        if (!started.jobId) throw new Error(dictionary.error);
-        await new Promise((resolve) => window.setTimeout(resolve, 750));
-        const statusUrl = `${apiBase}/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`;
-        const statusResponse = usingLocalEngine
-          // The local Node process can spend more than 15 seconds calculating a
-          // large result before its event loop returns to this status request.
-          // Do not mistake that healthy local computation for a lost connection.
-          ? await fetchLocalEngine(statusUrl, { cache: 'no-store' })
-          : await fetch(statusUrl, { cache: 'no-store' });
-        const status = await statusResponse.json();
-        if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
-        const progressTarget = results.querySelector('.loading-progress');
-        if (progressTarget) {
-          progressTarget.textContent = status.progress?.phase === 'analysis' && Number.isFinite(status.progress.total)
-            ? (language === 'es' ? `Páginas procesadas: ${status.progress.completed} de ${status.progress.total}` : `Pages processed: ${status.progress.completed} of ${status.progress.total}`)
-            : (language === 'es' ? 'Descubriendo páginas y enlaces…' : 'Discovering pages and links…');
-        }
-        if (status.state === 'error') throw new Error(status.error || dictionary.error);
-        if (status.state === 'complete') payload = status.result;
-      }
+      if (!started.jobId) throw new Error(dictionary.error);
+      if (usingLocalEngine) pendingLocalJob = { apiBase, jobId: started.jobId };
+      payload = await waitForAnalysisJob({ apiBase, jobId: started.jobId, usingLocalEngine, dictionary });
     }
     lastResult = payload;
+    pendingLocalJob = null;
     localSourceText = payload.localSourceText ?? '';
     try {
       const validationResponse = await fetch('index-validation.json', { cache: 'no-store' });
@@ -869,10 +853,88 @@ async function runAnalysis(estimateOnly) {
         : `Analysis complete: ${payload.summary.analyzed} pages analyzed and ${payload.summary.totalFragmentsDetected ?? payload.fragments?.length ?? 0} eligible fragments.`;
     }
   } catch (error) {
-    const message = error instanceof TypeError ? dictionary.connectionError : error.message;
-    results.innerHTML = `<section class="error-panel"><h2>${escapeHtml(dictionary.error)}</h2><p>${escapeHtml(message)}</p></section>`;
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    const canRecover = Boolean(pendingLocalJob);
+    const message = canRecover
+      ? (language === 'es'
+        ? 'La comunicación con el motor local se interrumpió, pero el análisis puede seguir terminado en este ordenador. Mantén abierta la aplicación y recupera el resultado sin volver a empezar.'
+        : 'Communication with the local engine was interrupted, but the analysis may still be finishing on this computer. Keep the application open and recover the result without starting again.')
+      : (error instanceof TypeError ? dictionary.connectionError : rawMessage);
+    results.innerHTML = `<section class="error-panel"><h2>${escapeHtml(dictionary.error)}</h2><p>${escapeHtml(message)}</p>${canRecover ? `<button type="button" class="primary-button" id="recoverLocalJob">${escapeHtml(language === 'es' ? 'Recuperar análisis local' : 'Recover local analysis')}</button>` : ''}<details class="error-details"><summary>${escapeHtml(language === 'es' ? 'Detalle técnico' : 'Technical detail')}</summary><p>${escapeHtml(rawMessage)}</p></details></section>`;
+    if (canRecover) document.querySelector('#recoverLocalJob')?.addEventListener('click', resumePendingLocalJob);
   } finally {
     if (elapsedTimer !== null) window.clearInterval(elapsedTimer);
+    setBusy(false);
+  }
+}
+
+function updateLocalJobProgress(status) {
+  const progressTarget = results.querySelector('.loading-progress');
+  if (!progressTarget) return;
+  progressTarget.textContent = status.progress?.phase === 'analysis' && Number.isFinite(status.progress.total)
+    ? (language === 'es' ? `Páginas procesadas: ${status.progress.completed} de ${status.progress.total}` : `Pages processed: ${status.progress.completed} of ${status.progress.total}`)
+    : (language === 'es' ? 'Descubriendo páginas y enlaces…' : 'Discovering pages and links…');
+}
+
+async function waitForAnalysisJob({ apiBase, jobId, usingLocalEngine, dictionary }) {
+  let transientFailures = 0;
+  while (true) {
+    await new Promise((resolve) => window.setTimeout(resolve, 750));
+    const statusUrl = `${apiBase}/api/analyze-status?jobId=${encodeURIComponent(jobId)}`;
+    try {
+      const statusResponse = usingLocalEngine
+        // The local engine may spend a long time in CPU work. A status request
+        // gets a generous timeout and is retried before a user sees an error.
+        ? await fetchLocalEngine(statusUrl, { cache: 'no-store', timeoutMs: 60_000 })
+        : await fetch(statusUrl, { cache: 'no-store' });
+      const status = await statusResponse.json();
+      if (!statusResponse.ok || status.error) {
+        const jobError = new Error(status.error || dictionary.error);
+        jobError.jobError = true;
+        throw jobError;
+      }
+      transientFailures = 0;
+      updateLocalJobProgress(status);
+      if (status.state === 'error') {
+        const jobError = new Error(status.error || dictionary.error);
+        jobError.jobError = true;
+        throw jobError;
+      }
+      if (status.state === 'complete') return status.result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isTemporary = usingLocalEngine && /signal timed out|timeout|abort|failed to fetch|networkerror/i.test(message);
+      if (!isTemporary || error?.jobError || transientFailures >= 4) throw error;
+      transientFailures += 1;
+      const progressTarget = results.querySelector('.loading-progress');
+      if (progressTarget) {
+        progressTarget.textContent = language === 'es'
+          ? `El motor local sigue calculando. Reconectando (${transientFailures}/5)…`
+          : `The local engine is still calculating. Reconnecting (${transientFailures}/5)…`;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, transientFailures * 1500));
+    }
+  }
+}
+
+async function resumePendingLocalJob() {
+  if (!pendingLocalJob || analysisRunning) return;
+  const dictionary = STRINGS[language];
+  setBusy(true);
+  results.innerHTML = `<section class="intro-card loading-card" aria-busy="true"><div><span class="soft-badge">${escapeHtml(language === 'es' ? 'Recuperando análisis' : 'Recovering analysis')}</span><h2>${escapeHtml(language === 'es' ? 'Conectando con el motor local' : 'Connecting to the local engine')}</h2><p class="loading-progress" aria-live="polite">${escapeHtml(language === 'es' ? 'Consultando el resultado que ya está en proceso…' : 'Checking the result already in progress…')}</p></div></section>`;
+  try {
+    const payload = await waitForAnalysisJob({ ...pendingLocalJob, usingLocalEngine: true, dictionary });
+    lastResult = payload;
+    pendingLocalJob = null;
+    localSourceText = payload.localSourceText ?? '';
+    activeTab = 'panel';
+    tabs.classList.remove('hidden');
+    renderResult();
+  } catch (error) {
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    results.innerHTML = `<section class="error-panel"><h2>${escapeHtml(dictionary.error)}</h2><p>${escapeHtml(language === 'es' ? 'No se pudo recuperar el resultado todavía. La aplicación puede seguir trabajando; inténtalo de nuevo en unos segundos.' : 'The result could not be recovered yet. The application may still be working; try again in a few seconds.')}</p><button type="button" class="primary-button" id="recoverLocalJob">${escapeHtml(language === 'es' ? 'Reintentar recuperación' : 'Retry recovery')}</button><details class="error-details"><summary>${escapeHtml(language === 'es' ? 'Detalle técnico' : 'Technical detail')}</summary><p>${escapeHtml(rawMessage)}</p></details></section>`;
+    document.querySelector('#recoverLocalJob')?.addEventListener('click', resumePendingLocalJob);
+  } finally {
     setBusy(false);
   }
 }

@@ -1085,6 +1085,10 @@ input:focus {
   padding: 18px;
   color: var(--danger);
 }
+.error-panel .primary-button { margin-top: 8px; }
+.error-details { margin-top: 14px; color: #6a322c; }
+.error-details summary { cursor: pointer; font-weight: 700; }
+.error-details p { margin: 8px 0 0; overflow-wrap: anywhere; }
 
 .hidden {
   display: none !important;
