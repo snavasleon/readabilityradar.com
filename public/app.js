@@ -367,7 +367,6 @@ const executionModeDialog = document.querySelector('#executionModeDialog');
 const privacyAccept = document.querySelector('#privacyAccept');
 const analysisLanguageAccept = document.querySelector('#analysisLanguageAccept');
 const onlineModeButton = document.querySelector('#onlineModeButton');
-const localModeButton = document.querySelector('#localModeButton');
 const localDownloadButton = document.querySelector('#localDownloadButton');
 const executionModeStatus = document.querySelector('#executionModeStatus');
 const engineStatus = document.querySelector('#engineStatus');
@@ -428,26 +427,6 @@ onlineModeButton.addEventListener('click', () => {
   stopWatchingForLocalEngine();
   executionMode = 'online';
   localEngineBase = null;
-  finishIntroduction();
-});
-
-localModeButton.addEventListener('click', async () => {
-  // Keep this explicit click independent from the background watcher. Chrome
-  // may require this user gesture before it shows the Local Network permission.
-  // If a watcher request is in flight, ignoring the click would lose that gesture.
-  executionModeStatus.textContent = language === 'es' ? 'Buscando el motor local en este ordenador…' : 'Looking for the local engine on this computer…';
-  const base = await findLocalEngine();
-  if (!base) {
-    const download = localEngineDownload();
-    executionModeStatus.innerHTML = language === 'es'
-      ? `Todavía no está abierta la aplicación completa. Descárgala y ábrela: <strong>seguirás en esta misma web</strong> y esta ventana se cerrará sola al detectarla.`
-      : `The full application is not open yet. Download and open it: <strong>you will continue in this same website</strong>, and this window will close automatically when it is detected.`;
-    localDownloadButton.href = download.href;
-    localDownloadButton.focus();
-    return;
-  }
-  localEngineBase = base;
-  executionMode = 'local';
   finishIntroduction();
 });
 
@@ -647,21 +626,18 @@ function showExecutionModeDialog() {
   const isSpanish = language === 'es';
   const download = localEngineDownload();
   document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'Elige la modalidad' : 'Choose a mode';
-  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Empieza ahora o amplía el análisis' : 'Start now or expand the analysis';
+  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Empieza con un análisis rápido' : 'Start with a quick analysis';
   document.querySelector('#executionModeText').textContent = isSpanish
-    ? 'Los resultados se mostrarán siempre en esta misma web.'
-    : 'Results will always appear here, on this same website.';
+    ? 'Puedes empezar ahora, sin instalar nada.'
+    : 'You can start now, without installing anything.';
   onlineModeButton.innerHTML = isSpanish
     ? '<strong>Análisis rápido</strong><span>Empieza sin instalar nada. Ideal para una primera revisión de hasta 30 páginas.</span>'
     : '<strong>Quick analysis</strong><span>Start without installing anything. Best for an initial review of up to 30 pages.</span>';
-  localModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis completo</strong><span>Para auditorías amplias. Usa la potencia de tu ordenador: hasta 10.000 páginas, sitemaps y contenido dinámico.</span>'
-    : '<strong>Full analysis</strong><span>For broad audits. Uses your computer’s power: up to 10,000 pages, sitemaps and dynamic content.</span>';
   localDownloadButton.href = download.href;
-  localDownloadButton.textContent = isSpanish ? download.es : download.en;
+  localDownloadButton.textContent = isSpanish ? `Análisis completo · ${download.es}` : `Full analysis · ${download.en}`;
   executionModeStatus.innerHTML = isSpanish
-    ? '<strong>¿Quieres el análisis completo?</strong> Descarga y abre la aplicación gratuita. Trabaja en segundo plano en tu ordenador, pero <strong>sigues usando esta misma página web</strong>. La ventana se cerrará automáticamente al conectarse.'
-    : '<strong>Want the full analysis?</strong> Download and open the free application. It works in the background on your computer, but <strong>you keep using this same web page</strong>. This window closes automatically when it connects.';
+    ? '<strong>¿Necesitas analizar un sitio completo?</strong> Descarga y abre la aplicación gratuita. Usa la potencia de tu ordenador, pero <strong>sigues usando esta misma página web</strong>; los resultados aparecerán aquí.'
+    : '<strong>Need to analyse a complete website?</strong> Download and open the free application. It uses your computer’s power, but <strong>you keep using this same web page</strong>; results appear here.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
   watchForLocalEngine();
