@@ -2,7 +2,7 @@
 
 **Open-source web readability analysis for Spanish and English.**
 
-[Use the web tool](https://readabilityradar.com) · [Local apps for Windows, macOS and Linux](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+[Use the web tool](https://readabilityradar.com) · [Local apps for Windows, macOS and Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses
 their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
@@ -19,7 +19,7 @@ reproducible accessibility and readability audits.
 | If you want to… | Choose this |
 | --- | --- |
 | Check a small website immediately, without installing anything | [Web edition](https://readabilityradar.com) |
-| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Local full edition for your operating system](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest) |
+| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Local full edition for your operating system](https://github.com/snavasleon/readabilityradar.com/releases/latest) |
 | Inspect, reproduce or modify the project | Download this repository and run the local edition |
 
 Download the local app for your operating system, open it and leave its small
@@ -49,7 +49,7 @@ This keeps the website workflow while the visitor's own computer performs the
 heavy work:
 
 1. Download the matching local application from the
-   [latest release](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest):
+   [latest release](https://github.com/snavasleon/readabilityradar.com/releases/latest):
    Windows `.exe`, macOS `.app`, or Linux package. It includes the local engine;
    Node.js does not need to be installed for these packaged editions.
    It starts silently and leaves the existing browser tab unchanged; keep the

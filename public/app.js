@@ -309,7 +309,7 @@ const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:5548
 // The releases page chooses the right local-engine download for Windows,
 // macOS and Linux. Keeping one destination prevents sending Mac/Linux users
 // to a Windows-only executable.
-const LOCAL_ENGINE_DOWNLOADS = 'https://github.com/MagicoutFIT/readabilityradar.com/releases/latest';
+const LOCAL_ENGINE_DOWNLOADS = 'https://github.com/snavasleon/readabilityradar.com/releases/latest';
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';

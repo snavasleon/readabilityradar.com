@@ -3,7 +3,7 @@
 ## Simplest option: packaged macOS app
 
 Download the macOS edition from the project's
-[latest release](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest).
+[latest release](https://github.com/snavasleon/readabilityradar.com/releases/latest).
 Choose the package that matches your computer:
 
 - **Apple Silicon** for M-series Macs (M1, M2, M3, M4 and later).
