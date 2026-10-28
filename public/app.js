@@ -833,7 +833,10 @@ async function runAnalysis(estimateOnly) {
         await new Promise((resolve) => window.setTimeout(resolve, 750));
         const statusUrl = `${apiBase}/api/analyze-status?jobId=${encodeURIComponent(started.jobId)}`;
         const statusResponse = usingLocalEngine
-          ? await fetchLocalEngine(statusUrl, { cache: 'no-store', timeoutMs: 15_000 })
+          // The local Node process can spend more than 15 seconds calculating a
+          // large result before its event loop returns to this status request.
+          // Do not mistake that healthy local computation for a lost connection.
+          ? await fetchLocalEngine(statusUrl, { cache: 'no-store' })
           : await fetch(statusUrl, { cache: 'no-store' });
         const status = await statusResponse.json();
         if (!statusResponse.ok || status.error) throw new Error(status.error || dictionary.error);
