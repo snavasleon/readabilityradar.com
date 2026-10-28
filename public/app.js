@@ -406,14 +406,15 @@ onlineModeButton.addEventListener('click', () => {
 });
 
 localModeButton.addEventListener('click', async () => {
+  // Keep this explicit click independent from the background watcher. Chrome
+  // may require this user gesture before it shows the Local Network permission.
+  // If a watcher request is in flight, ignoring the click would lose that gesture.
   executionModeStatus.textContent = language === 'es' ? 'Buscando el motor local en este ordenador…' : 'Looking for the local engine on this computer…';
-  localModeButton.disabled = true;
   const base = await findLocalEngine();
-  localModeButton.disabled = false;
   if (!base) {
     executionModeStatus.innerHTML = language === 'es'
-      ? `El análisis completo necesita la aplicación gratuita para Windows. <a href="${WINDOWS_APP_DOWNLOAD}">Descargar Web Readability Radar para Windows (.exe)</a>, ábrela y vuelve a pulsar esta opción.`
-      : `Full analysis needs the free Windows application. <a href="${WINDOWS_APP_DOWNLOAD}">Download Web Readability Radar for Windows (.exe)</a>, open it, then select this option again.`;
+      ? `Aún no se ha podido conectar con la aplicación local. Déjala abierta: la web seguirá detectándola automáticamente. Si Chrome muestra una petición de acceso a la red local, selecciónala como permitida. <a href="${WINDOWS_APP_DOWNLOAD}">Descargar Web Readability Radar para Windows (.exe)</a>`
+      : `The local application could not be reached yet. Leave it open: the page will keep detecting it automatically. If Chrome asks for Local Network access, allow it. <a href="${WINDOWS_APP_DOWNLOAD}">Download Web Readability Radar for Windows (.exe)</a>`;
     return;
   }
   localEngineBase = base;
@@ -692,14 +693,17 @@ function updateEngineStatus() {
 }
 
 async function findLocalEngine() {
-  for (const base of LOCAL_ENGINE_CANDIDATES) {
+  const probes = LOCAL_ENGINE_CANDIDATES.map(async (base) => {
     try {
-      const response = await fetchLocalEngine(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store' });
+      const response = await fetchLocalEngine(`${base}/api/bridge-status`, { method: 'GET', cache: 'no-store', mode: 'cors', credentials: 'omit' });
       const status = await response.json();
-      if (response.ok && status.bridge === 'web-readability-radar-local') return base;
-    } catch { /* Try the next supported local port. */ }
-  }
-  return null;
+      return response.ok && status.bridge === 'web-readability-radar-local' ? base : null;
+    } catch {
+      return null;
+    }
+  });
+  const results = await Promise.all(probes);
+  return results.find(Boolean) ?? null;
 }
 
 // Chrome 142+ asks for an explicit, user-granted Local Network Access permission
