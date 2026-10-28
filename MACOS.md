@@ -1,6 +1,26 @@
 # Running on macOS
 
-## Requirements
+## Simplest option: packaged macOS app
+
+Download the macOS edition from the project's
+[latest release](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest).
+Choose the package that matches your computer:
+
+- **Apple Silicon** for M-series Macs (M1, M2, M3, M4 and later).
+- **Intel** for earlier Intel Macs.
+
+Extract the downloaded ZIP and open **Web Readability Radar.app**. Keep it
+open while using **Full analysis on this computer** at
+[readabilityradar.com](https://readabilityradar.com). The app processes the
+analysis on your Mac; the public website receives neither the pages nor the
+result.
+
+The app is distributed without a paid Apple developer signature. If macOS
+blocks the first launch, Control-click the app, choose **Open**, then confirm
+**Open** once. Do this only after downloading the file from the official
+release page and checking its published SHA-256 checksum.
+
+## Source-code option
 
 - Keep the entire application folder together, including `public` and `server.mjs`.
 - Install a supported Node.js LTS release from https://nodejs.org/ for your Mac's architecture (Apple Silicon or Intel). The server requires Node.js 18 or newer.

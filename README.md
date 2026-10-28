@@ -2,7 +2,7 @@
 
 **Open-source web readability analysis for Spanish and English.**
 
-[Use the web tool](https://readabilityradar.com) · [Download the Windows app](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+[Use the web tool](https://readabilityradar.com) · [Local apps for Windows, macOS and Linux](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses
 their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
@@ -19,10 +19,10 @@ reproducible accessibility and readability audits.
 | If you want to… | Choose this |
 | --- | --- |
 | Check a small website immediately, without installing anything | [Web edition](https://readabilityradar.com) |
-| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Windows full edition (.exe)](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) |
+| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Local full edition for your operating system](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest) |
 | Inspect, reproduce or modify the project | Download this repository and run the local edition |
 
-For the Windows full edition, download the `.exe`, open it and leave its small
+Download the local app for your operating system, open it and leave its small
 local-engine window running. Then use the website normally and choose **Full
 analysis on this computer**. The browser asks once for permission to connect
 only to that application on the same computer.
@@ -48,9 +48,10 @@ The public website can also act as the interface for the local full engine.
 This keeps the website workflow while the visitor's own computer performs the
 heavy work:
 
-1. On Windows, download and open
-   [Web Readability Radar for Windows](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe).
-   It is a single portable application: Node.js does not need to be installed.
+1. Download the matching local application from the
+   [latest release](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest):
+   Windows `.exe`, macOS `.app`, or Linux package. It includes the local engine;
+   Node.js does not need to be installed for these packaged editions.
    It starts silently and leaves the existing browser tab unchanged; keep the
    application open while using the full mode.
 2. Visit [readabilityradar.com](https://readabilityradar.com), accept the
@@ -65,8 +66,8 @@ The local engine accepts browser requests only from `readabilityradar.com` and
 and results remain on the visitor's computer; the public website does not
 receive or store the resulting text or report.
 
-The ZIP/source-code route below remains available for macOS, Linux and advanced
-users who want to inspect, reproduce or modify the application.
+The ZIP/source-code route below remains available for advanced users who want
+to inspect, reproduce or modify the application.
 
 ## Download and run the local full edition
 
@@ -80,20 +81,22 @@ The local edition is free and runs on the user's computer. A local Chrome,
 Chromium or Edge installation is optional but enables rendering for pages whose
 useful content is produced with JavaScript.
 
-## Windows application release
+## Packaged local applications
 
-The Windows `.exe` is the recommended path for participants. It is built from
-the same open source with:
+The release page provides the simplest route for participants: a Windows
+`.exe`, an unsigned macOS `.app` bundle and a Linux executable package. They
+are built from the same open source. Windows can be built locally with:
 
 ```text
 npm install
 npm run build:windows
 ```
 
-The resulting file is `dist/Web-Readability-Radar.exe`. It includes the Node.js
-runtime but is not code-signed, so Windows may show a SmartScreen warning on a
-first download. Releases publish a SHA-256 checksum so recipients can verify
-the file they downloaded.
+The resulting Windows file is `dist/Web-Readability-Radar.exe`. The three
+packages include the Node.js runtime. Until a project can fund platform signing,
+Windows SmartScreen or macOS Gatekeeper may ask the person to explicitly allow
+the first launch. Releases publish checksums so recipients can verify the files
+they downloaded.
 
 ## Local quick start
 

@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "build:windows": "pkg . --target node24-win-x64 --output dist/Web-Readability-Radar.exe"
+    "build:windows": "pkg . --target node24-win-x64 --output dist/Web-Readability-Radar.exe",
+    "build:macos-intel": "pkg . --target node24-macos-x64 --output dist/Web-Readability-Radar",
+    "build:macos-apple-silicon": "pkg . --target node24-macos-arm64 --output dist/Web-Readability-Radar",
+    "build:linux": "pkg . --target node24-linux-x64 --output dist/Web-Readability-Radar"
   },
   "bin": "server.mjs",
   "engines": {

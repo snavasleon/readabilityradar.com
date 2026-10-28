@@ -306,7 +306,10 @@ let analysisLanguage = language;
 // guarded HTML proxy.
 const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
 const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:55481'];
-const WINDOWS_APP_DOWNLOAD = 'https://github.com/MagicoutFIT/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe';
+// The releases page chooses the right local-engine download for Windows,
+// macOS and Linux. Keeping one destination prevents sending Mac/Linux users
+// to a Windows-only executable.
+const LOCAL_ENGINE_DOWNLOADS = 'https://github.com/MagicoutFIT/readabilityradar.com/releases/latest';
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
@@ -416,8 +419,8 @@ localModeButton.addEventListener('click', async () => {
   const base = await findLocalEngine();
   if (!base) {
     executionModeStatus.innerHTML = language === 'es'
-      ? `Aún no se ha podido conectar con la aplicación local. Déjala abierta: la web seguirá detectándola automáticamente. Si Chrome muestra una petición de acceso a la red local, selecciónala como permitida. <a href="${WINDOWS_APP_DOWNLOAD}">Descargar Web Readability Radar para Windows (.exe)</a>`
-      : `The local application could not be reached yet. Leave it open: the page will keep detecting it automatically. If Chrome asks for Local Network access, allow it. <a href="${WINDOWS_APP_DOWNLOAD}">Download Web Readability Radar for Windows (.exe)</a>`;
+      ? `Aún no se ha podido conectar con la aplicación local. Déjala abierta: la web seguirá detectándola automáticamente. Si Chrome muestra una petición de acceso a la red local, selecciónala como permitida. <a href="${LOCAL_ENGINE_DOWNLOADS}">Descargar la aplicación local para Windows, macOS o Linux</a>`
+      : `The local application could not be reached yet. Leave it open: the page will keep detecting it automatically. If Chrome asks for Local Network access, allow it. <a href="${LOCAL_ENGINE_DOWNLOADS}">Download the local application for Windows, macOS or Linux</a>`;
     return;
   }
   localEngineBase = base;
@@ -631,8 +634,8 @@ function showExecutionModeDialog() {
     ? '<strong>Análisis completo en este ordenador</strong><span>Usa el motor local: sitemaps, hasta 10.000 candidatas y páginas con JavaScript. Chrome te pedirá permiso para conectar con la aplicación local.</span>'
     : '<strong>Full analysis on this computer</strong><span>Uses the local engine: sitemaps, up to 10,000 candidates and JavaScript-rendered pages. Chrome will ask permission to connect to the local application.</span>';
   executionModeStatus.textContent = isSpanish
-    ? 'Abre la aplicación gratuita para Windows y esta ventana se cerrará automáticamente al detectarla. Chrome puede solicitar permiso para conectarla. No se conecta a otros dispositivos de tu red.'
-    : 'Open the free Windows application and this window will close automatically when it is detected. Chrome may ask permission to connect to it. It does not connect to other devices on your network.';
+    ? 'Descarga y abre la aplicación gratuita para tu sistema (Windows, macOS o Linux). Esta ventana se cerrará automáticamente al detectarla. Chrome puede solicitar permiso para conectarla. No se conecta a otros dispositivos de tu red.'
+    : 'Download and open the free application for your system (Windows, macOS or Linux). This window will close automatically when it is detected. Chrome may ask permission to connect to it. It does not connect to other devices on your network.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
   watchForLocalEngine();
