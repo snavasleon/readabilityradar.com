@@ -27,10 +27,34 @@ export default {
         return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
       }
     }
+    if (url.pathname === '/api/search-visible' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        return json({ urls: await findSearchVisibleUrls(body?.domain, env.BRAVE_SEARCH_API_KEY) }, 200, { 'cache-control': 'no-store' });
+      } catch (error) {
+        return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
+      }
+    }
     if (url.pathname.startsWith('/api/')) return json({ error: 'Not found.' }, 404);
     return env.ASSETS.fetch(request);
   },
 };
+
+async function findSearchVisibleUrls(value, apiKey) {
+  if (!apiKey) throw httpError('Search-visible pages are not configured yet.', 503);
+  const domain = assertPublicHttpUrl(/^https?:\/\//i.test(String(value || '')) ? value : `https://${value}`).hostname;
+  const response = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(`site:${domain}`)}&count=20`, {
+    headers: { accept: 'application/json', 'x-subscription-token': apiKey },
+  });
+  if (!response.ok) throw httpError('The search service is temporarily unavailable.', 502);
+  const data = await response.json();
+  const suffix = domain.split('.').slice(-2).join('.');
+  const urls = [...new Set((data.web?.results || []).map(item => item.url).filter((item) => {
+    try { const host = new URL(item).hostname; return host === suffix || host.endsWith(`.${suffix}`); } catch { return false; }
+  }))].slice(0, 20);
+  if (!urls.length) throw httpError('No visible pages were found for this domain.', 404);
+  return urls;
+}
 
 async function fetchPublicHtml(value) {
   let target = assertPublicHttpUrl(value);

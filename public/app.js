@@ -332,6 +332,7 @@ function localEngineDownload() {
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
+let searchVisibilityMode = false;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
@@ -367,7 +368,7 @@ const executionModeDialog = document.querySelector('#executionModeDialog');
 const privacyAccept = document.querySelector('#privacyAccept');
 const analysisLanguageAccept = document.querySelector('#analysisLanguageAccept');
 const onlineModeButton = document.querySelector('#onlineModeButton');
-const localDownloadButton = document.querySelector('#localDownloadButton');
+const searchModeButton = document.querySelector('#searchModeButton');
 const executionModeStatus = document.querySelector('#executionModeStatus');
 const engineStatus = document.querySelector('#engineStatus');
 
@@ -427,11 +428,27 @@ onlineModeButton.addEventListener('click', () => {
   stopWatchingForLocalEngine();
   executionMode = 'online';
   localEngineBase = null;
+  searchVisibilityMode = false;
+  finishIntroduction();
+});
+
+searchModeButton.addEventListener('click', () => {
+  stopWatchingForLocalEngine();
+  executionMode = 'online';
+  localEngineBase = null;
+  searchVisibilityMode = true;
+  inputSource = 'url';
+  scope = 'domain';
+  intensity = 'complete';
+  htmlFile.value = '';
+  exactUrls.value = '';
+  intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === 'complete'));
   finishIntroduction();
 });
 
 scopeButtons.forEach((button) => {
   button.addEventListener('click', () => {
+    searchVisibilityMode = false;
     inputSource = button.dataset.scope === 'html' ? 'html' : 'url';
     scope = button.dataset.scope === 'domain' ? 'domain' : 'page';
     if (inputSource !== 'html') htmlFile.value = '';
@@ -525,8 +542,12 @@ function syncScope() {
   document.querySelectorAll('.domain-only').forEach((item) => item.classList.toggle('hidden', scope === 'page'));
   document.querySelectorAll('.page-only').forEach((item) => item.classList.toggle('hidden', scope !== 'page'));
   document.querySelector('.sample-size-field')?.classList.toggle('hidden', scope === 'page');
-  document.querySelector('#mainInputLabel').textContent = scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
-  document.querySelector('#mainInputHint').textContent = scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
+  document.querySelector('#mainInputLabel').textContent = searchVisibilityMode
+    ? (language === 'es' ? 'Dominio para buscar' : 'Domain to search')
+    : scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
+  document.querySelector('#mainInputHint').textContent = searchVisibilityMode
+    ? (language === 'es' ? 'La herramienta localizará automáticamente hasta 20 resultados visibles del dominio en Brave Search.' : 'The tool will automatically find up to 20 visible results for the domain in Brave Search.')
+    : scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
   estimateButton.querySelector('span:last-child').textContent = inputSource === 'html' ? dictionary.prepareHtml : scope === 'page' ? dictionary.preparePage : dictionary.estimate;
   syncIntensityField();
 }
@@ -624,20 +645,20 @@ function showAnalysisLanguageDialog() {
 
 function showExecutionModeDialog() {
   const isSpanish = language === 'es';
-  const download = localEngineDownload();
-  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'ELIGE CÓMO EMPEZAR' : 'CHOOSE HOW TO START';
-  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Puedes empezar ahora' : 'You can start now';
+  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'ELIGE UNA MUESTRA' : 'CHOOSE A SAMPLE';
+  document.querySelector('#executionModeTitle').textContent = isSpanish ? '¿Cómo quieres seleccionar las páginas?' : 'How would you like to select pages?';
   document.querySelector('#executionModeText').textContent = isSpanish
-    ? 'Haz un análisis rápido o amplía la capacidad cuando lo necesites.'
-    : 'Run a quick analysis or expand capacity when you need it.';
+    ? 'Ambas opciones se analizan directamente en esta web.'
+    : 'Both options are analysed directly in this website.';
   onlineModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis rápido</strong><span>Empieza al instante, sin instalar nada. Una primera revisión de hasta 30 páginas.</span>'
-    : '<strong>Quick analysis</strong><span>Start instantly, without installing anything. An initial review of up to 30 pages.</span>';
-  localDownloadButton.href = download.href;
-  localDownloadButton.textContent = isSpanish ? `O bien, activa el análisis completo · ${download.es}` : `Or activate full analysis · ${download.en}`;
+    ? '<strong>Análisis rápido del dominio</strong><span>La herramienta localiza automáticamente hasta 30 páginas enlazadas desde la página inicial.</span>'
+    : '<strong>Quick domain analysis</strong><span>The tool automatically finds up to 30 pages linked from the home page.</span>';
+  searchModeButton.innerHTML = isSpanish
+    ? '<strong>Páginas visibles en buscadores</strong><span>La herramienta localiza hasta 20 resultados del dominio en Brave Search, sin rastrear todo el sitio.</span>'
+    : '<strong>Search-visible pages</strong><span>The tool finds up to 20 domain results in Brave Search, without crawling the whole website.</span>';
   executionModeStatus.innerHTML = isSpanish
-    ? '<strong>¿Necesitas ir más lejos?</strong> Descarga y abre la aplicación gratuita. Analiza sitios grandes, sitemaps y contenido dinámico con la potencia de tu ordenador, pero <strong>sigues usando esta misma página web</strong>; los resultados aparecerán aquí.'
-    : '<strong>Need to go further?</strong> Download and open the free application. Analyse large websites, sitemaps and dynamic content using your computer’s power, but <strong>you keep using this same web page</strong>; results appear here.';
+    ? '<strong>Nota metodológica:</strong> esta muestra refleja URLs visibles en Brave Search en el momento de la consulta; no equivale a visitas reales ni a datos de analítica.'
+    : '<strong>Methodological note:</strong> this sample reflects URLs visible in Brave Search at the time of the query; it is not equivalent to real visits or analytics data.';
   executionModeDialog.hidden = false;
   onlineModeButton.focus();
   watchForLocalEngine();
@@ -758,6 +779,19 @@ function syncIntensityField() {
   if (!/^\d+$/.test(maxPagesInput.value)) maxPagesInput.value = '12';
 }
 
+async function findSearchVisibleUrls(value) {
+  const domains = String(value).split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
+  if (domains.length !== 1) throw new Error(language === 'es' ? 'Introduce un único dominio para buscar.' : 'Enter one domain to search.');
+  const response = await fetch('/api/search-visible', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ domain: domains[0] }),
+  });
+  const data = await response.json();
+  if (!response.ok || !Array.isArray(data.urls) || !data.urls.length) {
+    throw new Error(data.error || (language === 'es' ? 'No se encontraron páginas visibles en el buscador.' : 'No search-visible pages were found.'));
+  }
+  return data.urls.join('\n');
+}
+
 async function runAnalysis(estimateOnly) {
   if (analysisRunning || !privacyAccepted || !analysisLanguageConfirmed) return;
   if (!form.reportValidity()) return;
@@ -801,16 +835,18 @@ async function runAnalysis(estimateOnly) {
     }
     const localHtml = await readLocalHtml();
     localSourceText = '';
+    const enteredInput = inputSource === 'html' ? '' : validateWebInput(inputUrls.value);
+    const searchVisibleUrls = searchVisibilityMode ? await findSearchVisibleUrls(enteredInput) : null;
     const requestBody = {
       language: analysisLanguage,
-      scope,
-      input: inputSource === 'html' ? '' : validateWebInput(inputUrls.value),
-      exactUrls: scope === 'domain' ? exactUrls.value : '',
-      includeRelatedSubdomains: scope === 'domain' && includeSubdomains.checked,
+      scope: searchVisibilityMode ? 'page' : scope,
+      input: searchVisibleUrls ?? enteredInput,
+      exactUrls: searchVisibilityMode ? '' : (scope === 'domain' ? exactUrls.value : ''),
+      includeRelatedSubdomains: !searchVisibilityMode && scope === 'domain' && includeSubdomains.checked,
       estimateOnly,
-      maxPages: cloudflareFreeEdition && !usingLocalEngine ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value)),
-      samplingMode: cloudflareFreeEdition && !usingLocalEngine ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'),
-      fragmentLimit: intensity === 'fast' ? 'top10' : null,
+      maxPages: searchVisibilityMode ? '20' : (cloudflareFreeEdition && !usingLocalEngine ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value))),
+      samplingMode: searchVisibilityMode ? 'all' : (cloudflareFreeEdition && !usingLocalEngine ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all')),
+      fragmentLimit: searchVisibilityMode ? null : (intensity === 'fast' ? 'top10' : null),
       minWords: document.querySelector('#minWords').value,
       minFragmentWords: document.querySelector('#minFragmentWords').value,
       htmlInput: localHtml?.content ?? '',
