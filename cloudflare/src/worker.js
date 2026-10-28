@@ -43,32 +43,31 @@ export default {
 
 async function findIndexedPages(value) {
   const domain = assertPublicHttpUrl(/^https?:\/\//i.test(String(value || '')) ? value : `https://${value}`).hostname;
+  const homePageFallback = { urls: [`https://${domain}/`], source: 'home-page' };
   const cacheKey = new Request(`https://readabilityradar.com/internal/common-crawl/${encodeURIComponent(domain)}`);
   const cached = await caches.default.match(cacheKey);
   if (cached) return cached.json();
-  const indexesResponse = await fetch(COMMON_CRAWL_INDEXES, {
-    headers: { accept: 'application/json', 'user-agent': 'WebReadabilityRadar/1.0 (+https://readabilityradar.com)' },
-  });
-  if (!indexesResponse.ok) throw httpError('The public web index is temporarily unavailable.', 502);
-  const indexes = await indexesResponse.json();
-  const latestIndex = indexes.find((item) => typeof item?.id === 'string')?.id;
-  if (!latestIndex) throw httpError('The public web index did not provide a current collection.', 502);
-  const query = new URLSearchParams({ url: `${domain}/*`, matchType: 'domain', output: 'json', filter: ['status:200', 'mime:text/html'], collapse: 'urlkey', limit: '20' });
-  const response = await fetch(`https://index.commoncrawl.org/${latestIndex}-index?${query}`, {
-    headers: { accept: 'application/json', 'user-agent': 'WebReadabilityRadar/1.0 (+https://readabilityradar.com)' },
-  });
-  if (response.status === 404) return { urls: [`https://${domain}/`], source: 'home-page' };
-  if (response.status === 429 || response.status === 503) throw httpError('The public web index is busy. Try again later or use the quick domain analysis.', 503);
-  if (!response.ok) throw httpError('The public web index is temporarily unavailable.', 502);
-  const suffix = registrableDomain(domain);
-  const urls = [...new Set((await response.text()).trim().split('\n').filter(Boolean).map((line) => {
-    try { return JSON.parse(line).url; } catch { return null; }
-  }).filter((item) => {
-    try { const host = new URL(item).hostname; return host === suffix || host.endsWith(`.${suffix}`); } catch { return false; }
-  }))].slice(0, 20);
-  const result = urls.length ? { urls, source: 'common-crawl' } : { urls: [`https://${domain}/`], source: 'home-page' };
-  await caches.default.put(cacheKey, json(result, 200, { 'cache-control': 'public, max-age=86400' }));
-  return result;
+  try {
+    const indexesResponse = await fetch(COMMON_CRAWL_INDEXES, { headers: { accept: 'application/json' } });
+    if (!indexesResponse.ok) return homePageFallback;
+    const indexes = await indexesResponse.json();
+    const latestIndex = indexes.find((item) => typeof item?.id === 'string')?.id;
+    if (!latestIndex) return homePageFallback;
+    const query = new URLSearchParams({ url: `${domain}/*`, matchType: 'domain', output: 'json', filter: ['status:200', 'mime:text/html'], collapse: 'urlkey', limit: '20' });
+    const response = await fetch(`https://index.commoncrawl.org/${latestIndex}-index?${query}`, { headers: { accept: 'application/json' } });
+    if (!response.ok) return homePageFallback;
+    const suffix = registrableDomain(domain);
+    const urls = [...new Set((await response.text()).trim().split('\n').filter(Boolean).map((line) => {
+      try { return JSON.parse(line).url; } catch { return null; }
+    }).filter((item) => {
+      try { const host = new URL(item).hostname; return host === suffix || host.endsWith(`.${suffix}`); } catch { return false; }
+    }))].slice(0, 20);
+    const result = urls.length ? { urls, source: 'common-crawl' } : homePageFallback;
+    await caches.default.put(cacheKey, json(result, 200, { 'cache-control': 'public, max-age=86400' }));
+    return result;
+  } catch {
+    return homePageFallback;
+  }
 }
 
 function registrableDomain(host) {
