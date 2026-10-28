@@ -6,9 +6,7 @@ import spanishSyllables from '../../resources/pylabeador-syllables.json';
 const MAX_HTML_CHARS = 2_000_000;
 const FETCH_TIMEOUT_MS = 12_000;
 const MAX_REDIRECTS = 4;
-// This is a deliberately conservative platform quota. It protects the free
-// search credit and stores only an aggregate monthly count, never visitor data.
-const DEFAULT_MONTHLY_SEARCH_QUOTA = 500;
+const COMMON_CRAWL_INDEXES = 'https://index.commoncrawl.org/collinfo.json';
 
 export default {
   async fetch(request, env) {
@@ -30,19 +28,10 @@ export default {
         return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
       }
     }
-    if (url.pathname === '/api/search-visible' && request.method === 'POST') {
+    if (url.pathname === '/api/indexed-pages' && request.method === 'POST') {
       try {
         const body = await request.json();
-        const quota = await reserveSearchQuota(env);
-        const urls = await findSearchVisibleUrls(body?.domain, body?.language, env.BRAVE_SEARCH_API_KEY);
-        return json({ urls, quota }, 200, { 'cache-control': 'no-store' });
-      } catch (error) {
-        return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
-      }
-    }
-    if (url.pathname === '/api/search-visible-status' && request.method === 'GET') {
-      try {
-        return json(await getSearchQuota(env), 200, { 'cache-control': 'no-store' });
+        return json(await findIndexedPages(body?.domain), 200, { 'cache-control': 'no-store' });
       } catch (error) {
         return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
       }
@@ -52,21 +41,34 @@ export default {
   },
 };
 
-async function findSearchVisibleUrls(value, language, apiKey) {
-  if (!apiKey) throw httpError('Search-visible pages are not configured yet.', 503);
+async function findIndexedPages(value) {
   const domain = assertPublicHttpUrl(/^https?:\/\//i.test(String(value || '')) ? value : `https://${value}`).hostname;
-  const query = new URLSearchParams({ q: `site:${domain}`, count: '20', search_lang: language === 'en' ? 'en' : 'es' });
-  const response = await fetch(`https://api.search.brave.com/res/v1/web/search?${query}`, {
-    headers: { accept: 'application/json', 'x-subscription-token': apiKey },
+  const cacheKey = new Request(`https://readabilityradar.com/internal/common-crawl/${encodeURIComponent(domain)}`);
+  const cached = await caches.default.match(cacheKey);
+  if (cached) return cached.json();
+  const indexesResponse = await fetch(COMMON_CRAWL_INDEXES, {
+    headers: { accept: 'application/json', 'user-agent': 'WebReadabilityRadar/1.0 (+https://readabilityradar.com)' },
   });
-  if (!response.ok) throw httpError('The search service is temporarily unavailable.', 502);
-  const data = await response.json();
+  if (!indexesResponse.ok) throw httpError('The public web index is temporarily unavailable.', 502);
+  const indexes = await indexesResponse.json();
+  const latestIndex = indexes.find((item) => typeof item?.id === 'string')?.id;
+  if (!latestIndex) throw httpError('The public web index did not provide a current collection.', 502);
+  const query = new URLSearchParams({ url: `${domain}/*`, matchType: 'domain', output: 'json', filter: ['status:200', 'mime:text/html'], collapse: 'urlkey', limit: '20' });
+  const response = await fetch(`https://index.commoncrawl.org/${latestIndex}-index?${query}`, {
+    headers: { accept: 'application/json', 'user-agent': 'WebReadabilityRadar/1.0 (+https://readabilityradar.com)' },
+  });
+  if (response.status === 404) return { urls: [`https://${domain}/`], source: 'home-page' };
+  if (response.status === 429 || response.status === 503) throw httpError('The public web index is busy. Try again later or use the quick domain analysis.', 503);
+  if (!response.ok) throw httpError('The public web index is temporarily unavailable.', 502);
   const suffix = registrableDomain(domain);
-  const urls = [...new Set((data.web?.results || []).map(item => item.url).filter((item) => {
+  const urls = [...new Set((await response.text()).trim().split('\n').filter(Boolean).map((line) => {
+    try { return JSON.parse(line).url; } catch { return null; }
+  }).filter((item) => {
     try { const host = new URL(item).hostname; return host === suffix || host.endsWith(`.${suffix}`); } catch { return false; }
   }))].slice(0, 20);
-  if (!urls.length) throw httpError('No visible pages were found for this domain.', 404);
-  return urls;
+  const result = urls.length ? { urls, source: 'common-crawl' } : { urls: [`https://${domain}/`], source: 'home-page' };
+  await caches.default.put(cacheKey, json(result, 200, { 'cache-control': 'public, max-age=86400' }));
+  return result;
 }
 
 function registrableDomain(host) {
@@ -74,40 +76,6 @@ function registrableDomain(host) {
   const shortSuffix = parts.slice(-2).join('.');
   const threePartSuffixes = new Set(['co.uk', 'ac.uk', 'gov.uk', 'com.au', 'net.au', 'org.au', 'co.nz', 'com.br']);
   return threePartSuffixes.has(shortSuffix) && parts.length > 2 ? parts.slice(-3).join('.') : shortSuffix;
-}
-
-function quotaSettings(env) {
-  const configuredLimit = Number(env.SEARCH_QUOTA_MONTHLY_LIMIT);
-  const limit = Number.isInteger(configuredLimit) && configuredLimit > 0 && configuredLimit <= 50_000
-    ? configuredLimit
-    : DEFAULT_MONTHLY_SEARCH_QUOTA;
-  const now = new Date();
-  const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-  const renewsAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  return { limit, period, renewsAt: renewsAt.toISOString() };
-}
-
-async function getSearchQuota(env) {
-  const settings = quotaSettings(env);
-  if (!env.SEARCH_QUOTA) return { enabled: false, remaining: 0, limit: settings.limit, renewsAt: settings.renewsAt };
-  const used = Number(await env.SEARCH_QUOTA.get(`search-visible:${settings.period}`)) || 0;
-  return { enabled: Boolean(env.BRAVE_SEARCH_API_KEY), remaining: Math.max(0, settings.limit - used), limit: settings.limit, renewsAt: settings.renewsAt };
-}
-
-async function reserveSearchQuota(env) {
-  const quota = await getSearchQuota(env);
-  if (!quota.enabled) throw httpError('Search-visible pages are not configured yet.', 503);
-  if (quota.remaining < 1) {
-    const error = httpError('Search-visible page selection is unavailable until the monthly quota renews.', 429);
-    error.quota = quota;
-    throw error;
-  }
-  // KV is intentionally used only for a low-volume public quota. A simultaneous
-  // request can at most make the displayed counter briefly approximate.
-  const settings = quotaSettings(env);
-  const used = settings.limit - quota.remaining;
-  await env.SEARCH_QUOTA.put(`search-visible:${settings.period}`, String(used + 1), { expirationTtl: 70 * 24 * 60 * 60 });
-  return { ...quota, remaining: quota.remaining - 1 };
 }
 
 async function fetchPublicHtml(value) {
