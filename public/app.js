@@ -550,9 +550,9 @@ function syncScope() {
   htmlFile.title = htmlFile.files[0]?.name ?? dictionary.localHtmlHint;
   htmlFile.disabled = analysisRunning || inputSource !== 'html';
   inputUrls.disabled = analysisRunning || inputSource === 'html';
-  exactUrls.disabled = analysisRunning || scope !== 'domain';
-  includeSubdomains.disabled = analysisRunning || scope !== 'domain';
-  document.querySelectorAll('.domain-only').forEach((item) => item.classList.toggle('hidden', scope === 'page'));
+  exactUrls.disabled = analysisRunning || scope !== 'domain' || quickHomeMode;
+  includeSubdomains.disabled = analysisRunning || scope !== 'domain' || quickHomeMode;
+  document.querySelectorAll('.domain-only').forEach((item) => item.classList.toggle('hidden', scope === 'page' || quickHomeMode));
   document.querySelectorAll('.page-only').forEach((item) => item.classList.toggle('hidden', scope !== 'page'));
   document.querySelector('.sample-size-field')?.classList.toggle('hidden', scope === 'page');
   document.querySelector('#mainInputLabel').textContent = searchVisibilityMode
