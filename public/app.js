@@ -306,7 +306,7 @@ let analysisLanguage = language;
 // guarded HTML proxy.
 const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
 const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:55481'];
-const WINDOWS_APP_DOWNLOAD = 'https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe';
+const WINDOWS_APP_DOWNLOAD = 'https://github.com/MagicoutFIT/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe';
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';

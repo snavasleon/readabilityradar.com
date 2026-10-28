@@ -2,7 +2,7 @@
 
 **Open-source web readability analysis for Spanish and English.**
 
-[Use the web tool](https://readabilityradar.com) · [Download the Windows app](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+[Use the web tool](https://readabilityradar.com) · [Download the Windows app](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses
 their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
@@ -19,7 +19,7 @@ reproducible accessibility and readability audits.
 | If you want to… | Choose this |
 | --- | --- |
 | Check a small website immediately, without installing anything | [Web edition](https://readabilityradar.com) |
-| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Windows full edition (.exe)](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe) |
+| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Windows full edition (.exe)](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) |
 | Inspect, reproduce or modify the project | Download this repository and run the local edition |
 
 For the Windows full edition, download the `.exe`, open it and leave its small
@@ -49,7 +49,7 @@ This keeps the website workflow while the visitor's own computer performs the
 heavy work:
 
 1. On Windows, download and open
-   [Web Readability Radar for Windows](https://github.com/MagicoutFIT/lecturabilidadradar.com/releases/latest/download/Web-Readability-Radar.exe).
+   [Web Readability Radar for Windows](https://github.com/MagicoutFIT/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe).
    It is a single portable application: Node.js does not need to be installed.
    It starts silently and leaves the existing browser tab unchanged; keep the
    application open while using the full mode.

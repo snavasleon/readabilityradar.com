@@ -8,5 +8,5 @@ Suggested format:
 
 > Web Readability Radar contributors. (2026). *Web Readability Radar*
 > (Version X.Y.Z) [Computer software]. GitHub.
-> https://github.com/MagicoutFIT/lecturabilidadradar.com
+> https://github.com/MagicoutFIT/readabilityradar.com
 
