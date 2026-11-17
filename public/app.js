@@ -48,9 +48,9 @@ const STRINGS = {
     analyze: 'Analizar ahora',
     example: 'Cargar ejemplo',
     legalTitle: 'Base legal y técnica',
-    legalHelp: 'Resume el marco de accesibilidad, lectura clara y evaluación reproducible. No equivale a una certificación legal.',
-    legalText: 'Se apoya en criterios de accesibilidad digital, lectura clara y evaluación reproducible de contenido textual.',
-    legalRefs: 'Referencias orientativas: WCAG, EN 301 549, Real Decreto 1112/2018 y normas UNE vinculadas a lectura fácil.',
+    legalHelp: 'Explica el alcance de la evaluación. No equivale a una certificación de accesibilidad ni legal.',
+    legalText: 'Evalúa la legibilidad lingüística de contenido textual mediante fórmulas reproducibles.',
+    legalRefs: 'Marco contextual: WCAG, EN 301 549, Real Decreto 1112/2018 y normas UNE vinculadas a lectura fácil. El resultado no verifica por sí solo el cumplimiento de estos requisitos.',
     tabPanel: 'Resumen',
     tabExplore: 'Explorar',
     tabFragments: 'Fragmentos',
@@ -195,9 +195,9 @@ const STRINGS = {
     analyze: 'Analyze now',
     example: 'Load example',
     legalTitle: 'Legal and technical basis',
-    legalHelp: 'Summarizes accessibility, plain language, and reproducible evaluation. It is not a legal certification.',
-    legalText: 'Based on digital accessibility, plain language, and reproducible textual evaluation criteria.',
-    legalRefs: 'Indicative references: WCAG, EN 301 549, W3C Cognitive Accessibility guidance, and plain-language guidelines.',
+    legalHelp: 'Explains the scope of the evaluation. It is not an accessibility or legal certification.',
+    legalText: 'Evaluates the linguistic readability of textual content using reproducible formulas.',
+    legalRefs: 'Contextual references: WCAG, EN 301 549, public-sector accessibility rules and plain-language guidance. The result does not by itself verify compliance with these requirements.',
     tabPanel: 'Summary',
     tabExplore: 'Explore',
     tabFragments: 'Fragments',
@@ -332,13 +332,13 @@ function localEngineDownload() {
 let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
-let searchVisibilityMode = true;
+let searchVisibilityMode = false;
 let quickHomeMode = false;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
 let pendingLocalJob = null;
-let scope = 'domain';
+let scope = 'page';
 let inputSource = 'url';
 let analysisRunning = false;
 let intensity = 'fast';
@@ -368,8 +368,8 @@ const analysisLanguageDialog = document.querySelector('#analysisLanguageDialog')
 const executionModeDialog = document.querySelector('#executionModeDialog');
 const privacyAccept = document.querySelector('#privacyAccept');
 const analysisLanguageAccept = document.querySelector('#analysisLanguageAccept');
-const onlineModeButton = document.querySelector('#onlineModeButton');
-const searchModeButton = document.querySelector('#searchModeButton');
+const fullDomainDownload = document.querySelector('#fullDomainDownload');
+const checkLocalEngine = document.querySelector('#checkLocalEngine');
 const executionModeStatus = document.querySelector('#executionModeStatus');
 const engineStatus = document.querySelector('#engineStatus');
 
@@ -426,43 +426,21 @@ analysisLanguageAccept.addEventListener('click', async () => {
   finishIntroduction();
 });
 
-onlineModeButton.addEventListener('click', () => {
-  stopWatchingForLocalEngine();
-  executionMode = 'online';
-  localEngineBase = null;
-  searchVisibilityMode = false;
-  quickHomeMode = true;
-  inputSource = 'url';
-  scope = 'domain';
-  intensity = 'fast';
-  intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === 'fast'));
-  finishIntroduction();
-});
-
-searchModeButton.addEventListener('click', () => {
-  if (searchModeButton.disabled) return;
-  stopWatchingForLocalEngine();
-  executionMode = 'online';
-  localEngineBase = null;
-  searchVisibilityMode = true;
-  quickHomeMode = false;
-  inputSource = 'url';
-  scope = 'domain';
-  intensity = 'complete';
-  htmlFile.value = '';
-  exactUrls.value = '';
-  intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === 'complete'));
-  finishIntroduction();
-});
+fullDomainDownload.addEventListener('click', () => watchForLocalEngine());
+checkLocalEngine.addEventListener('click', () => void connectFullDomain());
 
 scopeButtons.forEach((button) => {
   button.addEventListener('click', () => {
     const mode = button.dataset.mode;
-    searchVisibilityMode = mode === 'sample';
-    quickHomeMode = mode === 'quick';
+    if (mode === 'domain') {
+      void connectFullDomain();
+      return;
+    }
+    searchVisibilityMode = false;
+    quickHomeMode = false;
     inputSource = mode === 'html' ? 'html' : 'url';
-    scope = (mode === 'page' || mode === 'html') ? 'page' : 'domain';
-    intensity = mode === 'quick' ? 'fast' : 'complete';
+    scope = 'page';
+    intensity = 'fast';
     intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === intensity));
     if (inputSource !== 'html') htmlFile.value = '';
     syncScope();
@@ -538,7 +516,7 @@ tabs.addEventListener('click', (event) => {
 
 function syncScope() {
   const dictionary = STRINGS[language];
-  const activeSource = inputSource === 'html' ? 'html' : searchVisibilityMode ? 'sample' : scope;
+  const activeSource = inputSource === 'html' ? 'html' : scope;
   scopeButtons.forEach((button) => {
     const active = button.dataset.mode === activeSource;
     button.classList.toggle('active', active);
@@ -550,19 +528,13 @@ function syncScope() {
   htmlFile.title = htmlFile.files[0]?.name ?? dictionary.localHtmlHint;
   htmlFile.disabled = analysisRunning || inputSource !== 'html';
   inputUrls.disabled = analysisRunning || inputSource === 'html';
-  exactUrls.disabled = analysisRunning || scope !== 'domain' || quickHomeMode;
-  includeSubdomains.disabled = analysisRunning || scope !== 'domain' || quickHomeMode;
-  document.querySelectorAll('.domain-only').forEach((item) => item.classList.toggle('hidden', scope === 'page' || quickHomeMode));
+  exactUrls.disabled = analysisRunning || scope !== 'domain';
+  includeSubdomains.disabled = analysisRunning || scope !== 'domain';
+  document.querySelectorAll('.domain-only').forEach((item) => item.classList.toggle('hidden', scope === 'page'));
   document.querySelectorAll('.page-only').forEach((item) => item.classList.toggle('hidden', scope !== 'page'));
   document.querySelector('.sample-size-field')?.classList.toggle('hidden', scope === 'page');
-  document.querySelector('#mainInputLabel').textContent = searchVisibilityMode
-    ? (language === 'es' ? 'Dominio inicial' : 'Starting domain')
-    : scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
-  document.querySelector('#mainInputHint').textContent = searchVisibilityMode
-    ? (language === 'es' ? 'La herramienta localizará automáticamente hasta 20 páginas públicas del dominio.' : 'The tool will automatically find up to 20 public pages from the domain.')
-    : quickHomeMode
-      ? (language === 'es' ? 'Se analizará solo la página principal del dominio.' : 'Only the domain home page will be analysed.')
-    : scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
+  document.querySelector('#mainInputLabel').textContent = scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
+  document.querySelector('#mainInputHint').textContent = scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
   estimateButton.querySelector('span:last-child').textContent = inputSource === 'html' ? dictionary.prepareHtml : scope === 'page' ? dictionary.preparePage : dictionary.estimate;
   syncIntensityField();
   renderModeChoices();
@@ -571,9 +543,9 @@ function syncScope() {
 function renderModeChoices() {
   const es = language === 'es';
   const copy = {
-    sample: es ? ['Páginas principales', 'Hasta 20 páginas públicas.'] : ['Main pages', 'Up to 20 public pages.'],
-    page: es ? ['Una página web', 'Analiza una URL o la portada de un dominio.'] : ['One web page', 'Analyse a URL or a domain home page.'],
+    page: es ? ['Una página web', 'Analiza una URL concreta.'] : ['One web page', 'Analyse one exact URL.'],
     html: es ? ['Archivo HTML', 'Analiza un archivo de tu equipo.'] : ['HTML file', 'Analyse a file from your computer.'],
+    domain: es ? ['Dominio completo', 'Requiere la aplicación local.'] : ['Complete domain', 'Requires the local application.'],
   };
   scopeButtons.forEach((button) => {
     const [title, description] = copy[button.dataset.mode];
@@ -674,23 +646,48 @@ function showAnalysisLanguageDialog() {
 }
 
 function showExecutionModeDialog() {
+  const download = localEngineDownload();
   const isSpanish = language === 'es';
-  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'ELIGE UNA MUESTRA' : 'CHOOSE A SAMPLE';
-  document.querySelector('#executionModeTitle').textContent = isSpanish ? '¿Cómo quieres seleccionar las páginas?' : 'How would you like to select pages?';
+  document.querySelector('#executionModeEyebrow').textContent = isSpanish ? 'ANÁLISIS COMPLETO' : 'COMPLETE ANALYSIS';
+  document.querySelector('#executionModeTitle').textContent = isSpanish ? 'Analiza un dominio completo' : 'Analyse a complete domain';
   document.querySelector('#executionModeText').textContent = isSpanish
-    ? 'Ambas opciones se analizan directamente en esta web.'
-    : 'Both options are analysed directly in this website.';
-  onlineModeButton.innerHTML = isSpanish
-    ? '<strong>Análisis rápido</strong><span>Analiza solo la página principal del dominio. Ideal para una primera orientación.</span>'
-    : '<strong>Quick analysis</strong><span>Analyses only the domain home page. Ideal for a first overview.</span>';
-  searchModeButton.innerHTML = isSpanish
-    ? '<strong>Páginas principales del dominio</strong><span>Localiza automáticamente hasta 20 páginas públicas para una revisión más representativa.</span>'
-    : '<strong>Main domain pages</strong><span>Automatically finds up to 20 public pages for a more representative review.</span>';
+    ? 'Para recorrer sitemaps, enlaces internos y contenido dinámico, el análisis se ejecuta en tu ordenador. Descarga y abre la aplicación gratuita.'
+    : 'To scan sitemaps, internal links and dynamic content, the analysis runs on your computer. Download and open the free application.';
+  fullDomainDownload.href = download.href;
+  fullDomainDownload.textContent = isSpanish ? download.es : download.en;
+  fullDomainDownload.setAttribute('download', '');
+  checkLocalEngine.textContent = isSpanish ? 'Ya he abierto la aplicación' : 'I have opened the application';
   executionModeStatus.innerHTML = isSpanish
-    ? '<strong>Nota metodológica:</strong> la muestra reúne páginas públicas detectables del dominio; no equivale a visitas reales ni a datos de analítica.'
-    : '<strong>Methodological note:</strong> the sample brings together detectable public pages from the domain; it is not equivalent to real visits or analytics data.';
+    ? 'Al ejecutarla, se abrirá la edición completa en tu navegador. También puedes volver aquí: cuando detectemos la aplicación, esta ventana se cerrará sola.'
+    : 'When you run it, the complete edition will open in your browser. You can also return here: this window closes automatically when the application is detected.';
+  document.querySelector('main').inert = true;
   executionModeDialog.hidden = false;
-  onlineModeButton.focus();
+  fullDomainDownload.focus();
+}
+
+function activateFullDomain(base) {
+  stopWatchingForLocalEngine();
+  localEngineBase = base;
+  executionMode = 'local';
+  searchVisibilityMode = false;
+  quickHomeMode = false;
+  inputSource = 'url';
+  scope = 'domain';
+  intensity = 'complete';
+  htmlFile.value = '';
+  intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === 'complete'));
+  finishIntroduction();
+}
+
+async function connectFullDomain() {
+  const base = await findLocalEngine();
+  if (base) {
+    activateFullDomain(base);
+    resetResults();
+    return;
+  }
+  showExecutionModeDialog();
+  watchForLocalEngine();
 }
 
 async function chooseAvailableEngine() {
@@ -731,9 +728,7 @@ function watchForLocalEngine() {
     try {
       const base = await findLocalEngine();
       if (!base) return;
-      localEngineBase = base;
-      executionMode = 'local';
-      finishIntroduction();
+      activateFullDomain(base);
     } finally {
       localEngineChecking = false;
     }
@@ -747,11 +742,7 @@ function updateEngineStatus() {
   engineStatus.hidden = false;
   engineStatus.textContent = executionMode === 'local'
     ? (language === 'es' ? '● Motor completo conectado en este ordenador · capacidad local' : '● Full local engine connected on this computer · local capacity')
-    : quickHomeMode
-      ? (language === 'es' ? '● Análisis rápido en línea · página principal' : '● Quick online analysis · home page')
-      : searchVisibilityMode
-        ? (language === 'es' ? '● Muestra ampliada en línea · hasta 20 páginas' : '● Extended online sample · up to 20 pages')
-        : (language === 'es' ? '● Modo en línea · hasta 30 páginas HTML' : '● Online mode · up to 30 HTML pages');
+    : (language === 'es' ? '● Análisis de una página o archivo HTML en línea' : '● Online analysis of one page or HTML file');
 }
 
 async function findLocalEngine() {
@@ -785,12 +776,7 @@ function completeSampleLabel() {
 
 function syncIntensityField() {
   if (cloudflareFreeEdition && executionMode !== 'local') {
-    if (quickHomeMode) {
-      maxPagesInput.value = '1';
-      maxPagesInput.disabled = true;
-      return;
-    }
-    maxPagesInput.value = searchVisibilityMode ? '20' : (scope === 'page' ? '1' : '30');
+    maxPagesInput.value = '1';
     maxPagesInput.disabled = true;
     return;
   }
@@ -827,6 +813,10 @@ async function findIndexedPageUrls(value) {
 async function runAnalysis(estimateOnly) {
   if (analysisRunning || !privacyAccepted || !analysisLanguageConfirmed) return;
   if (!form.reportValidity()) return;
+  if (cloudflareFreeEdition && scope === 'domain' && !(executionMode === 'local' && localEngineBase)) {
+    await connectFullDomain();
+    return;
+  }
   const dictionary = STRINGS[language];
   const startedAt = Date.now();
   let elapsedTimer = null;
@@ -868,17 +858,16 @@ async function runAnalysis(estimateOnly) {
     const localHtml = await readLocalHtml();
     localSourceText = '';
     const enteredInput = inputSource === 'html' ? '' : validateWebInput(inputUrls.value);
-    const searchVisibleUrls = searchVisibilityMode ? await findIndexedPageUrls(enteredInput) : null;
     const requestBody = {
       language: analysisLanguage,
-      scope: (searchVisibilityMode || quickHomeMode) ? 'page' : scope,
-      input: searchVisibleUrls ?? enteredInput,
-      exactUrls: (searchVisibilityMode || quickHomeMode) ? '' : (scope === 'domain' ? exactUrls.value : ''),
-      includeRelatedSubdomains: !searchVisibilityMode && !quickHomeMode && scope === 'domain' && includeSubdomains.checked,
+      scope,
+      input: enteredInput,
+      exactUrls: scope === 'domain' ? exactUrls.value : '',
+      includeRelatedSubdomains: scope === 'domain' && includeSubdomains.checked,
       estimateOnly,
-      maxPages: searchVisibilityMode ? '20' : (quickHomeMode ? '1' : (cloudflareFreeEdition && !usingLocalEngine ? 30 : (scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value)))),
-      samplingMode: searchVisibilityMode ? 'all' : (quickHomeMode ? 'all' : (cloudflareFreeEdition && !usingLocalEngine ? (intensity === 'fast' ? 'random' : 'all') : (intensity === 'fast' && scope === 'domain' ? 'random' : 'all'))),
-      fragmentLimit: searchVisibilityMode ? null : (intensity === 'fast' ? 'top10' : null),
+      maxPages: scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value),
+      samplingMode: intensity === 'fast' && scope === 'domain' ? 'random' : 'all',
+      fragmentLimit: intensity === 'fast' ? 'top10' : null,
       minWords: document.querySelector('#minWords').value,
       minFragmentWords: document.querySelector('#minFragmentWords').value,
       htmlInput: localHtml?.content ?? '',

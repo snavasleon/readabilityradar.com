@@ -33,9 +33,9 @@
                 <span class="info-dot" data-i18n-title="whatAnalyzeHelp">i</span>
               </p>
               <div class="choice-grid source-choices mode-choices">
-                <button class="choice active" type="button" data-mode="sample" data-scope="domain"><span aria-hidden="true">🌐</span><span><strong></strong><small></small></span></button>
-                <button class="choice" type="button" data-mode="page" data-scope="page"><span aria-hidden="true">▧</span><span><strong></strong><small></small></span></button>
+                <button class="choice active" type="button" data-mode="page" data-scope="page"><span aria-hidden="true">▧</span><span><strong></strong><small></small></span></button>
                 <button class="choice" type="button" data-mode="html" data-scope="html"><span aria-hidden="true">&lt;/&gt;</span><span><strong></strong><small></small></span></button>
+                <button class="choice" type="button" data-mode="domain" data-scope="domain"><span aria-hidden="true">🌐</span><span><strong></strong><small></small></span></button>
               </div>
             </div>
 
@@ -211,14 +211,12 @@
         <p class="eyebrow" id="executionModeEyebrow"></p>
         <h2 id="executionModeTitle"></h2>
         <p id="executionModeText"></p>
-        <div class="execution-mode-options">
-          <button type="button" class="execution-mode-card" id="onlineModeButton"></button>
-          <button type="button" class="execution-mode-card" id="searchModeButton"></button>
-        </div>
+        <a class="primary-button local-download-button" id="fullDomainDownload" href="#"></a>
+        <button type="button" class="secondary-button local-download-button" id="checkLocalEngine"></button>
         <p class="dialog-note" id="executionModeStatus" aria-live="polite"></p>
       </div>
     </section>
 
-    <script src="/app.js?v=main-pages-sample-20261028" type="module"></script>
+    <script src="/app.js?v=full-domain-local-20261117" type="module"></script>
   </body>
 </html>

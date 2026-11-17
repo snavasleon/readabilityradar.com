@@ -155,7 +155,9 @@ function listen(port, fallbackPorts = []) {
     console.log(`Opened at: ${localUrl}`);
     console.log('Press Ctrl+C to close the server.');
     console.log('');
-    if (process.argv.includes('--open')) {
+    // Packaged desktop apps should open the local edition automatically. The
+    // source launcher retains the explicit --open switch for development.
+    if (process.argv.includes('--open') || process.pkg) {
       openBrowser(localUrl);
     }
   });
