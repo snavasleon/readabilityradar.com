@@ -23,7 +23,11 @@ jobs:
           - label: macOS Apple Silicon
             os: macos-14
             script: build:macos-apple-silicon
-            artifact: Web-Readability-Radar-macos-apple-silicon.app.zip
+            artifact: Web-Readability-Radar-macos-arm64
+          - label: macOS Intel
+            os: macos-13
+            script: build:macos-intel
+            artifact: Web-Readability-Radar-macos-x64
           - label: Linux
             os: ubuntu-latest
             script: build:linux
@@ -37,32 +41,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ${{ matrix.script }}
-      - name: Package macOS application
-        if: startsWith(matrix.os, 'macos')
+      - name: Rename macOS binary
+        if: matrix.label == 'macOS Apple Silicon' || matrix.label == 'macOS Intel'
         shell: bash
-        run: |
-          APP="dist/Web Readability Radar.app"
-          mkdir -p "$APP/Contents/MacOS"
-          mv dist/Web-Readability-Radar "$APP/Contents/MacOS/Web Readability Radar.bin"
-          cat > "$APP/Contents/MacOS/Web Readability Radar" <<'LAUNCHER'
-          #!/bin/sh
-          APP_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-          exec "$APP_DIR/Web Readability Radar.bin"
-          LAUNCHER
-          chmod +x "$APP/Contents/MacOS/Web Readability Radar" "$APP/Contents/MacOS/Web Readability Radar.bin"
-          cat > "$APP/Contents/Info.plist" <<'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>CFBundleDisplayName</key><string>Web Readability Radar</string>
-            <key>CFBundleExecutable</key><string>Web Readability Radar</string>
-            <key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string>
-            <key>CFBundleName</key><string>Web Readability Radar</string>
-            <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleShortVersionString</key><string>${{ github.ref_name }}</string>
-          </dict></plist>
-          PLIST
-          ditto -c -k --sequesterRsrc --keepParent "$APP" "dist/${{ matrix.artifact }}"
+        run: mv dist/Web-Readability-Radar "dist/${{ matrix.artifact }}"
       - name: Package Linux application
         if: matrix.os == 'ubuntu-latest'
         shell: bash
@@ -87,6 +69,34 @@ jobs:
       - name: Write checksums
         shell: bash
         run: |
+          APP="release-assets/Web Readability Radar.app"
+          mkdir -p "$APP/Contents/MacOS"
+          mv release-assets/Web-Readability-Radar-macos-arm64 "$APP/Contents/MacOS/Web Readability Radar.arm64"
+          mv release-assets/Web-Readability-Radar-macos-x64 "$APP/Contents/MacOS/Web Readability Radar.x64"
+          cat > "$APP/Contents/MacOS/Web Readability Radar" <<'LAUNCHER'
+          #!/bin/sh
+          APP_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+          case "$(uname -m)" in
+            arm64) exec "$APP_DIR/Web Readability Radar.arm64" "$@" ;;
+            x86_64) exec "$APP_DIR/Web Readability Radar.x64" "$@" ;;
+            *) echo "This Mac architecture is not supported." >&2; exit 1 ;;
+          esac
+          LAUNCHER
+          chmod +x "$APP/Contents/MacOS/Web Readability Radar" "$APP/Contents/MacOS/Web Readability Radar.arm64" "$APP/Contents/MacOS/Web Readability Radar.x64"
+          cat > "$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleDisplayName</key><string>Web Readability Radar</string>
+            <key>CFBundleExecutable</key><string>Web Readability Radar</string>
+            <key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string>
+            <key>CFBundleName</key><string>Web Readability Radar</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>${{ github.ref_name }}</string>
+          </dict></plist>
+          PLIST
+          (cd release-assets && zip -qry Web-Readability-Radar-macos-universal.app.zip "Web Readability Radar.app")
+          rm -rf "$APP"
           cd release-assets
           sha256sum * > SHA256SUMS.txt
       - name: Attach all packages to the tagged release

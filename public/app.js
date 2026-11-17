@@ -309,7 +309,7 @@ const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:5548
 const RELEASES_PAGE = 'https://github.com/snavasleon/readabilityradar.com/releases/latest';
 const LOCAL_ENGINE_FILES = {
   windows: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe',
-  macos: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-apple-silicon.app.zip',
+  macos: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-universal.app.zip',
   linux: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-linux-x64.tar.gz',
 };
 
