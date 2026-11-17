@@ -11,7 +11,6 @@ export async function analyzeOnline(input, progress = () => {}) {
   const minFragmentWords = bounded(input.minFragmentWords, 30, 10, 250);
   const dictionary = await loadDictionary(language);
   const inputUrls = parseUrlList(input.input);
-  const exactUrls = parseUrlList(input.exactUrls);
   if (!inputUrls.length && !input.htmlInput) throw new Error(language === 'es' ? 'Introduce al menos una URL.' : 'Enter at least one URL.');
 
   let candidates;
@@ -26,7 +25,7 @@ export async function analyzeOnline(input, progress = () => {}) {
       : 'Full-domain analysis requires the local application.');
   }
   const requested = input.maxPages === 'all' ? MAX_PAGES : bounded(input.maxPages, 12, 1, MAX_PAGES);
-  const selected = selectCandidates(candidates, requested, input.samplingMode === 'random');
+  const selected = candidates.slice(0, requested).map(item => ({ ...item, selectionMethod: 'selected' }));
   if (input.estimateOnly) return makeResult({ language, scope, candidates, selected, pages: [], domains, input, dictionary, minWords, minFragmentWords });
 
   const pages = [];
@@ -57,34 +56,6 @@ async function loadDictionary(language) {
     dictionaries.set(language, await response.json());
   }
   return dictionaries.get(language);
-}
-
-async function discover(inputs, exactUrls, language, includeSubdomains, progress) {
-  const all = new Map();
-  const domains = [];
-  for (const initial of inputs) {
-    const start = new URL(initial);
-    const includes = inScope(start, includeSubdomains);
-    const add = (url, source, depth = 0, mandatory = false) => {
-      try {
-        const canonical = canonicalUrl(url);
-        if (!includes(canonical) || all.has(canonical.href) || all.size >= MAX_CANDIDATES) return;
-        all.set(canonical.href, candidate(canonical.href, source, language, depth, mandatory));
-      } catch { /* Ignore malformed links. */ }
-    };
-    add(start.href, 'initial', 0, true);
-    exactUrls.forEach(url => add(url, 'required', 0, true));
-    try {
-      const first = await getHtml(start.href);
-      const document = new DOMParser().parseFromString(first.html, 'text/html');
-      for (const link of document.links) add(link.href, 'crawl', 1, false);
-    } catch { /* The mandatory URL is retained and will show an error later. */ }
-    domains.push({ key: start.href, domain: start.host, startUrl: start.href, includeRelatedSubdomains: includeSubdomains,
-      robotsAvailable: false, robotsBlocked: 0, sitemapUrlsChecked: 0, sitemapLinks: 0, crawledPages: 1,
-      crawlErrors: 0, depthReached: 1, partialReasons: ['browser_client_page_limit'], sections: [] });
-    progress('discovery');
-  }
-  return { candidates: [...all.values()], domains };
 }
 
 async function analyzePage(item, language, minWords, minFragmentWords, dictionary, localHtml) {
@@ -141,9 +112,6 @@ function sourceReason(key, language) { const values = language === 'es' ? { init
 function pageBase(item, title) { return { ...item, pageId: hashId(item.url), title }; }
 function parseUrlList(value) { return String(value || '').split(/[\r\n,]+/).map(item => item.trim()).filter(Boolean).map(item => /^https?:\/\//i.test(item) ? item : `https://${item}`).map(item => canonicalUrl(item).href); }
 function canonicalUrl(value) { const url = new URL(value); url.hash = ''; for (const key of [...url.searchParams.keys()]) if (/^(utm_[a-z]+|fbclid|gclid|mc_[a-z]+)$/i.test(key)) url.searchParams.delete(key); url.searchParams.sort(); return url; }
-function inScope(start, includeSubdomains) { const base = registrableDomain(start.hostname); return url => url.hostname === start.hostname || (includeSubdomains && (url.hostname === base || url.hostname.endsWith(`.${base}`))); }
-function registrableDomain(host) { const parts = host.split('.'); const suffix = parts.slice(-2).join('.'); return ['co.uk', 'ac.uk', 'com.au', 'com.br', 'co.nz'].includes(suffix) && parts.length > 2 ? parts.slice(-3).join('.') : suffix; }
-function selectCandidates(candidates, maxPages, random) { const mandatory = candidates.filter(item => item.mandatory); const rest = candidates.filter(item => !item.mandatory); const pool = random ? shuffle(rest) : rest; return mandatory.concat(pool).slice(0, maxPages).map(item => ({ ...item, selectionMethod: item.mandatory ? 'mandatory' : random ? 'random' : 'all_eligible' })); }
 function extractVisibleText(document) { const copy = document.body?.cloneNode(true) || document.documentElement.cloneNode(true); copy.querySelectorAll('script,style,noscript,svg,template,nav,footer,aside,form,dialog,[hidden],[aria-hidden="true"]').forEach(node => node.remove()); return clean(copy.textContent); }
 function extractTextBlocks(document) { return [...document.querySelectorAll('p')].map(node => clean(node.textContent)).filter(Boolean); }
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim(); }
@@ -161,5 +129,4 @@ function compareDifficulty(a, b) { return (a.rawScore ?? a.score) - (b.rawScore 
 function hashId(value) { let hash = 2166136261; for (const char of String(value)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619); return `C-${(hash >>> 0).toString(36).toUpperCase()}`; }
 function round1(value) { return Math.round(value * 10) / 10; }
 function bounded(value, fallback, min, max) { const number = value === undefined || value === '' ? fallback : Number(value); if (!Number.isInteger(number) || number < min || number > max) throw new Error(`${min}-${max}`); return number; }
-function shuffle(items) { const copy = [...items]; for (let index = copy.length - 1; index > 0; index -= 1) { const target = Math.floor(Math.random() * (index + 1)); [copy[index], copy[target]] = [copy[target], copy[index]]; } return copy; }
 function shortReason(language, words) { return language === 'en' ? `Short page: ${words} words. Metrics are shown, but interpret them with caution.` : `Página breve: ${words} palabras. Se muestran métricas, pero conviene interpretarlas con cautela.`; }

@@ -782,19 +782,6 @@ function syncIntensityField() {
   if (!/^\d+$/.test(maxPagesInput.value)) maxPagesInput.value = '12';
 }
 
-async function findIndexedPageUrls(value) {
-  const domains = String(value).split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
-  if (domains.length !== 1) throw new Error(language === 'es' ? 'Introduce un único dominio para buscar.' : 'Enter one domain to search.');
-  const response = await fetch('/api/indexed-pages', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ domain: domains[0], language: analysisLanguage }),
-  });
-  const data = await response.json();
-  if (!response.ok || !Array.isArray(data.urls) || !data.urls.length) {
-    throw new Error(data.error || (language === 'es' ? 'No se encontraron páginas indexadas.' : 'No indexed pages were found.'));
-  }
-  return data.urls.join('\n');
-}
-
 async function runAnalysis(estimateOnly) {
   if (analysisRunning || !privacyAccepted || !analysisLanguageConfirmed) return;
   if (!form.reportValidity()) return;

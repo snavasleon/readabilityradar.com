@@ -6,7 +6,6 @@ import spanishSyllables from '../../resources/pylabeador-syllables.json';
 const MAX_HTML_CHARS = 2_000_000;
 const FETCH_TIMEOUT_MS = 12_000;
 const MAX_REDIRECTS = 4;
-const COMMON_CRAWL_INDEXES = 'https://index.commoncrawl.org/collinfo.json';
 
 export default {
   async fetch(request, env) {
@@ -28,54 +27,10 @@ export default {
         return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
       }
     }
-    if (url.pathname === '/api/indexed-pages' && request.method === 'POST') {
-      try {
-        const body = await request.json();
-        return json(await findIndexedPages(body?.domain), 200, { 'cache-control': 'no-store' });
-      } catch (error) {
-        return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
-      }
-    }
     if (url.pathname.startsWith('/api/')) return json({ error: 'Not found.' }, 404);
     return env.ASSETS.fetch(request);
   },
 };
-
-async function findIndexedPages(value) {
-  const domain = assertPublicHttpUrl(/^https?:\/\//i.test(String(value || '')) ? value : `https://${value}`).hostname;
-  const homePageFallback = { urls: [`https://${domain}/`], source: 'home-page' };
-  const cacheKey = new Request(`https://readabilityradar.com/internal/common-crawl/${encodeURIComponent(domain)}`);
-  const cached = await caches.default.match(cacheKey);
-  if (cached) return cached.json();
-  try {
-    const indexesResponse = await fetch(COMMON_CRAWL_INDEXES, { headers: { accept: 'application/json' } });
-    if (!indexesResponse.ok) return homePageFallback;
-    const indexes = await indexesResponse.json();
-    const latestIndex = indexes.find((item) => typeof item?.id === 'string')?.id;
-    if (!latestIndex) return homePageFallback;
-    const query = new URLSearchParams({ url: `${domain}/*`, matchType: 'domain', output: 'json', filter: ['status:200', 'mime:text/html'], collapse: 'urlkey', limit: '20' });
-    const response = await fetch(`https://index.commoncrawl.org/${latestIndex}-index?${query}`, { headers: { accept: 'application/json' } });
-    if (!response.ok) return homePageFallback;
-    const suffix = registrableDomain(domain);
-    const urls = [...new Set((await response.text()).trim().split('\n').filter(Boolean).map((line) => {
-      try { return JSON.parse(line).url; } catch { return null; }
-    }).filter((item) => {
-      try { const host = new URL(item).hostname; return host === suffix || host.endsWith(`.${suffix}`); } catch { return false; }
-    }))].slice(0, 20);
-    const result = urls.length ? { urls, source: 'common-crawl' } : homePageFallback;
-    await caches.default.put(cacheKey, json(result, 200, { 'cache-control': 'public, max-age=86400' }));
-    return result;
-  } catch {
-    return homePageFallback;
-  }
-}
-
-function registrableDomain(host) {
-  const parts = host.toLowerCase().split('.').filter(Boolean);
-  const shortSuffix = parts.slice(-2).join('.');
-  const threePartSuffixes = new Set(['co.uk', 'ac.uk', 'gov.uk', 'com.au', 'net.au', 'org.au', 'co.nz', 'com.br']);
-  return threePartSuffixes.has(shortSuffix) && parts.length > 2 ? parts.slice(-3).join('.') : shortSuffix;
-}
 
 async function fetchPublicHtml(value) {
   let target = assertPublicHttpUrl(value);
