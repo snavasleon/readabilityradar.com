@@ -303,6 +303,53 @@ let analysisLanguage = language;
 // version calculates in the visitor's browser and uses the Worker only as a
 // guarded HTML proxy.
 const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
+const TURNSTILE_SITE_KEY = '0x4AAAAAAGFHr7he3XXoXQGL';
+let turnstileWidgetId = null;
+
+async function getTurnstileToken() {
+  if (!cloudflareFreeEdition || executionMode === 'local') return '';
+  const target = document.querySelector('#turnstileWidget');
+  if (!target) throw new Error(language === 'es' ? 'No se pudo preparar la comprobación de seguridad.' : 'Security verification could not be prepared.');
+  const turnstile = await waitForTurnstile();
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error(language === 'es' ? 'La comprobación de seguridad ha tardado demasiado. Vuelve a intentarlo.' : 'Security verification took too long. Please try again.')), 20_000);
+    const finish = (callback) => (value) => {
+      window.clearTimeout(timeout);
+      if (turnstileWidgetId !== null) {
+        turnstile.remove(turnstileWidgetId);
+        turnstileWidgetId = null;
+      }
+      callback(value);
+    };
+    turnstileWidgetId = turnstile.render(target, {
+      sitekey: TURNSTILE_SITE_KEY,
+      size: 'invisible',
+      execution: 'execute',
+      action: 'readability-fetch',
+      'response-field': false,
+      callback: finish(resolve),
+      'error-callback': finish(() => reject(new Error(language === 'es' ? 'No se pudo completar la comprobación de seguridad. Vuelve a intentarlo.' : 'Security verification could not be completed. Please try again.'))),
+      'timeout-callback': finish(() => reject(new Error(language === 'es' ? 'La comprobación de seguridad ha caducado. Vuelve a intentarlo.' : 'Security verification expired. Please try again.'))),
+    });
+    turnstile.execute(turnstileWidgetId);
+  });
+}
+
+function waitForTurnstile() {
+  if (window.turnstile) return Promise.resolve(window.turnstile);
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      if (window.turnstile) {
+        window.clearInterval(timer);
+        resolve(window.turnstile);
+      } else if (Date.now() - started > 10_000) {
+        window.clearInterval(timer);
+        reject(new Error(language === 'es' ? 'No se pudo cargar la comprobación de seguridad. Comprueba tu conexión e inténtalo de nuevo.' : 'Security verification could not load. Check your connection and try again.'));
+      }
+    }, 100);
+  });
+}
 const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:55481'];
 const RELEASES_PAGE = 'https://github.com/snavasleon/readabilityradar.com/releases/latest';
 const LOCAL_ENGINE_FILES = {
@@ -848,6 +895,7 @@ async function runAnalysis(estimateOnly) {
     };
     let payload;
     if (cloudflareFreeEdition && !usingLocalEngine) {
+      requestBody.turnstileToken = await getTurnstileToken();
       payload = await analyzeOnline(requestBody, (phase, completed, total) => {
         const progressTarget = results.querySelector('.loading-progress');
         if (!progressTarget) return;

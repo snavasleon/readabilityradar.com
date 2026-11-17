@@ -30,3 +30,8 @@ Do not commit credentials, Cloudflare API tokens, account identifiers, user
 inputs, or analysis results containing personal data. The `.gitignore` file
 excludes common local and deployment artifacts.
 
+The public `/api/fetch` route requires a Cloudflare Turnstile token. Its public
+site key is intentionally present in the browser code; its validation secret is
+an encrypted Cloudflare Worker secret named `TURNSTILE_SECRET_KEY`, never a
+repository file.
+

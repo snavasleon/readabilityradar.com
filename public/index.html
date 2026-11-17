@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Web Readability Radar</title>
     <link rel="stylesheet" href="/styles.css" />
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   </head>
   <body>
     <main class="app-shell">
@@ -27,6 +28,7 @@
       <section class="workspace">
         <aside class="control-card">
           <form id="analyzerForm">
+            <div id="turnstileWidget" class="turnstile-widget" aria-live="polite"></div>
             <div class="control-block">
               <p class="label-row">
                 <span data-i18n="whatAnalyze">What do you want to analyze</span>
@@ -217,6 +219,6 @@
       </div>
     </section>
 
-    <script src="/app.js?v=full-domain-local-20261117" type="module"></script>
+    <script src="/app.js?v=turnstile-20261117" type="module"></script>
   </body>
 </html>

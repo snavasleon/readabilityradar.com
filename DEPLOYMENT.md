@@ -11,7 +11,8 @@ The public edition is designed to run without a paid application server:
    the report/PDF locally.
 3. The Worker retrieves only public HTTP(S) HTML. It blocks local/private
    destinations, credentials and sensitive ports, limits response size and
-   follows a bounded number of redirects.
+   follows a bounded number of redirects. Turnstile validates a one-time
+   human-verification token before this endpoint retrieves a page.
 4. The public site analyzes one specified web page or a local HTML file. The
    local edition provides the full-domain workflow and optional local browser
    rendering of JavaScript-heavy pages.
@@ -36,11 +37,15 @@ server.
 - `www.readabilityradar.com` also serves the Worker; a canonical redirect to
   the root domain remains a planned configuration improvement.
 - Source code and Cloudflare configuration are public in this repository.
+- The Worker secret `TURNSTILE_SECRET_KEY` is configured in Cloudflare only;
+  it is never placed in source code or GitHub.
 
 ## Remaining hardening work
 
-- Add Cloudflare Turnstile before an online analysis starts.
-- Add a per-IP rate-limit rule for the proxy endpoint.
+- Evaluate a per-IP rate-limit rule for the proxy endpoint only if the
+  Cloudflare dashboard confirms it has no charge for this zone.
+- Evaluate Bot Fight Mode with real analyses before enabling it, because it may
+  interfere with legitimate browser requests.
 - Configure automated deployment from the `main` branch after review.
 - Evaluate Browser Run as an optional, quota-limited enhancement for pages
   whose useful text is produced only after JavaScript rendering.

@@ -41,6 +41,16 @@ The public web edition calculates results in each visitor's browser and does
 not store submitted URLs, page text, reports or results. Full-domain analysis
 uses the local application.
 
+## Public-service protection
+
+The public page-retrieval endpoint is protected by Cloudflare Turnstile. Before
+retrieving a web page, the browser completes Cloudflare's managed human check
+and the Worker validates its one-time token on the server side. The public site
+key is included in the client code; the validation secret is stored only as the
+encrypted `TURNSTILE_SECRET_KEY` Worker secret and is never committed to this
+repository. Turnstile is used to reduce automated abuse; it does not create
+user accounts or store analysis results.
+
 ## Use full local capacity from the website
 
 The public website can also act as the interface for the local full engine.

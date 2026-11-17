@@ -22,6 +22,7 @@ export default {
     if (url.pathname === '/api/fetch' && request.method === 'POST') {
       try {
         const body = await request.json();
+        await verifyTurnstile(body?.turnstileToken, env, request);
         return json(await fetchPublicHtml(body?.url), 200, { 'cache-control': 'no-store' });
       } catch (error) {
         return json({ error: readableError(error) }, error?.statusCode || 502, { 'cache-control': 'no-store' });
@@ -31,6 +32,25 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+async function verifyTurnstile(token, env, request) {
+  if (typeof env.TURNSTILE_SECRET_KEY !== 'string' || !env.TURNSTILE_SECRET_KEY) {
+    throw httpError('Security verification is not configured.', 503);
+  }
+  if (typeof token !== 'string' || !token) throw httpError('Security verification is required.', 403);
+  const form = new FormData();
+  form.append('secret', env.TURNSTILE_SECRET_KEY);
+  form.append('response', token);
+  const remoteIp = request.headers.get('CF-Connecting-IP');
+  if (remoteIp) form.append('remoteip', remoteIp);
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+    method: 'POST', body: form,
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result?.success || result.action !== 'readability-fetch' || !['readabilityradar.com', 'www.readabilityradar.com'].includes(result.hostname)) {
+    throw httpError('Security verification failed. Please retry.', 403);
+  }
+}
 
 async function fetchPublicHtml(value) {
   let target = assertPublicHttpUrl(value);
