@@ -12,14 +12,14 @@ The public edition is designed to run without a paid application server:
 3. The Worker retrieves only public HTTP(S) HTML. It blocks local/private
    destinations, credentials and sensitive ports, limits response size and
    follows a bounded number of redirects.
-4. The public domain explores up to 30 static-HTML pages per run. The local
-   edition remains the full-capacity option for large crawls and local browser
+4. The public site analyzes one specified web page or a local HTML file. The
+   local edition provides the full-domain workflow and optional local browser
    rendering of JavaScript-heavy pages.
 
 No database stores submitted URLs, fetched text, results or reports. Local HTML
 uploads remain in the visitor's browser.
 
-This is the **limited public web edition**, not the local full edition. The
+This is the public single-page/HTML edition, not the local full edition. The
 repository root contains the local application (`server.mjs` and launchers),
 which supports the broader 10,000-candidate workflow and optional local browser
 rendering. The README explains how to download and run it. When that local

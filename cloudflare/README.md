@@ -9,7 +9,7 @@ edition on the free plan and avoids storing submitted URLs, page text or reports
 - `/api/fetch` accepts only public HTTP(S) URLs, blocks local/private addresses,
   credentials and sensitive ports, follows at most four redirects, and limits
   HTML size and response time;
-- the browser can process up to 30 static-HTML pages per domain in one run;
+- the browser processes one specified web page or one local HTML file;
 - local HTML uploads are analyzed in the browser and never leave the device;
 - dynamic rendering is an optional future enhancement using Cloudflare Browser
   Run; static HTML remains the safe no-cost fallback.

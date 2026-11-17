@@ -1,7 +1,7 @@
-// Browser-side engine for the no-cost public edition. It intentionally keeps
-// text, scores, charts and report generation on the visitor's device.
-const MAX_PAGES = 30;
-const MAX_CANDIDATES = 30;
+// Browser-side engine for individual web pages and uploaded HTML files.
+// Text, scores, charts and report generation stay on the visitor's device.
+const MAX_PAGES = 1;
+const MAX_CANDIDATES = 1;
 const dictionaries = new Map();
 
 export async function analyzeOnline(input, progress = () => {}) {
@@ -21,10 +21,9 @@ export async function analyzeOnline(input, progress = () => {}) {
   } else if (scope === 'page') {
     candidates = inputUrls.map(url => candidate(url, 'selected', language, 0, true));
   } else {
-    progress('discovery');
-    const discovery = await discover(inputUrls, exactUrls, language, Boolean(input.includeRelatedSubdomains), progress);
-    candidates = discovery.candidates;
-    domains = discovery.domains;
+    throw new Error(language === 'es'
+      ? 'El análisis de dominio completo requiere la aplicación local.'
+      : 'Full-domain analysis requires the local application.');
   }
   const requested = input.maxPages === 'all' ? MAX_PAGES : bounded(input.maxPages, 12, 1, MAX_PAGES);
   const selected = selectCandidates(candidates, requested, input.samplingMode === 'random');

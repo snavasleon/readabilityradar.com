@@ -34,13 +34,12 @@ readability formulas and interface, but they are intended for different uses.
 
 | Edition | Where it runs | Coverage | Best for |
 | --- | --- | --- | --- |
-| **Public web edition** | [readabilityradar.com](https://readabilityradar.com) | Up to 30 static-HTML pages per domain; JavaScript-rendered text may be incomplete | Free, quick public analyses without installation |
+| **Public web edition** | [readabilityradar.com](https://readabilityradar.com) | One web page or one local HTML file | Immediate checks without installation |
 | **Local full edition** | Your own Windows, macOS or Linux computer | Up to 10,000 candidate pages; sitemaps, internal links, robots.txt and optional local browser rendering | Large, reproducible audits and JavaScript-heavy websites |
 
-The public web edition is deliberately limited so it can run without a paid
-server. It calculates results in each visitor's browser and does not store
-submitted URLs, page text, reports or results. It is not a replacement for the
-local full edition when a study needs broad domain coverage.
+The public web edition calculates results in each visitor's browser and does
+not store submitted URLs, page text, reports or results. Full-domain analysis
+uses the local application.
 
 ## Use full local capacity from the website
 
@@ -151,9 +150,8 @@ Analysis runs on your computer. Entered URLs are requested from your computer. D
 The `cloudflare/` folder provides a no-cost public edition. Cloudflare serves
 the interface and safely retrieves public HTML, while the visitor's browser
 performs the readability calculation, visualisation and PDF generation. It does
-not store URLs, page text or reports. The public edition explores up to 30
-static-HTML pages per domain; the local edition remains the full-capacity option
-for large crawls and JavaScript-rendered pages.
+not store URLs, page text or reports. It analyzes one specified web page or a
+local HTML file; the local edition provides full-domain analysis.
 
 The current public deployment and remaining hardening tasks are recorded in
 [DEPLOYMENT.md](DEPLOYMENT.md).

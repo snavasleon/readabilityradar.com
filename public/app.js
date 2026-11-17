@@ -35,7 +35,6 @@ const STRINGS = {
     intensityHelp: 'Rápido explora una muestra aleatoria y representativa de páginas por sección y muestra, dentro de esa muestra, hasta 10 párrafos con mayor dificultad. Completo analiza todas las URLs elegibles detectables mediante enlaces internos y sitemaps, hasta el máximo técnico publicado.',
     fast: 'Rápido',
     complete: 'Completo',
-    portableLimit: 'Rápido: muestra estratificada de páginas y hasta 10 fragmentos más difíciles de esa muestra. Completo: todas las URLs elegibles detectables, hasta el máximo técnico de 10.000 candidatas.',
     samplingSettings: 'Ajustes de extracción',
     settingsHelp: 'Estos dos ajustes opcionales determinan qué textos entran en el análisis. Puedes dejarlos como están.',
     sampleSize: 'Alcance',
@@ -182,7 +181,6 @@ const STRINGS = {
     intensityHelp: 'Fast explores a random, representative page sample by section and shows up to 10 hardest paragraphs within that sample. Complete analyzes all eligible URLs detectable through internal links and sitemaps, up to the published technical maximum.',
     fast: 'Fast',
     complete: 'Complete',
-    portableLimit: 'Fast: stratified page sample and up to 10 hardest fragments from that sample. Complete: all eligible detectable URLs, up to the technical maximum of 10,000 candidates.',
     samplingSettings: 'Extraction settings',
     settingsHelp: 'These optional settings determine which texts enter the analysis. You can leave them unchanged.',
     sampleSize: 'Scope',
@@ -585,19 +583,6 @@ function applyLanguage() {
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
   });
-  if (cloudflareFreeEdition) {
-    const limit = document.querySelector('[data-i18n="portableLimit"]');
-    const help = document.querySelector('[data-i18n-title="settingsHelp"]');
-    if (limit) limit.textContent = language === 'es'
-      ? 'Online: Rápido muestra una selección de fragmentos; Completo analiza hasta 30 páginas detectadas mediante HTML estático. El cálculo se hace en tu navegador.'
-      : 'Online: Fast shows a selection of fragments; Complete analyzes up to 30 pages found through static HTML. Calculation happens in your browser.';
-    if (help) {
-      const text = language === 'es'
-        ? 'La edición online explora hasta 30 páginas enlazadas desde la página inicial. No guarda el texto ni los resultados. Las páginas que cargan contenido solo con JavaScript pueden mostrar una cobertura parcial.'
-        : 'The online edition explores up to 30 pages linked from the starting page. It does not store text or results. Pages that load content only with JavaScript may have partial coverage.';
-      help.dataset.title = text; help.setAttribute('aria-label', text);
-    }
-  }
   syncIntensityField();
   syncScope();
 }
@@ -1180,7 +1165,7 @@ function renderPanel(dictionary) {
           </article>
           `).join('')}
         </div>
-        ${coverage ? `<p class="reason">${coverage.platform === 'browser_client_free' ? (language === 'es' ? `Edición online gratuita: el texto, las métricas, los gráficos y el informe se procesan en este navegador. Se exploran hasta ${coverage.maxPages} páginas con HTML estático; no se guarda el contenido.` : `Free online edition: text, metrics, charts and the report are processed in this browser. Up to ${coverage.maxPages} static-HTML pages are explored; content is not stored.`) : coverage.maxCrawlDepth === null ? (language === 'es' ? `Modo completo: se recorren todos los enlaces internos detectables y las URLs de sitemap, hasta ${coverage.maxCandidates} URLs candidatas.` : `Complete mode: all detectable internal links and sitemap URLs are traversed, up to ${coverage.maxCandidates} candidate URLs.`) : (language === 'es' ? `Modo rápido: hasta ${coverage.maxCrawlDepth} niveles y ${coverage.maxCrawlPagesPerDomain} páginas exploradas por dominio. Sitemaps y candidatas: hasta ${coverage.maxCandidates}.` : `Fast mode: up to ${coverage.maxCrawlDepth} link levels and ${coverage.maxCrawlPagesPerDomain} crawled pages per domain. Sitemaps and candidates: up to ${coverage.maxCandidates}.`)}</p>` : ''}
+        ${coverage ? `<p class="reason">${coverage.platform === 'browser_client_free' ? (language === 'es' ? 'Análisis ejecutado en este navegador sobre la página web o el archivo HTML indicado. No se guarda el contenido.' : 'Analysis run in this browser for the specified web page or HTML file. Content is not stored.') : coverage.maxCrawlDepth === null ? (language === 'es' ? `Modo completo: se recorren todos los enlaces internos detectables y las URLs de sitemap, hasta ${coverage.maxCandidates} URLs candidatas.` : `Complete mode: all detectable internal links and sitemap URLs are traversed, up to ${coverage.maxCandidates} candidate URLs.`) : (language === 'es' ? `Modo rápido: hasta ${coverage.maxCrawlDepth} niveles y ${coverage.maxCrawlPagesPerDomain} páginas exploradas por dominio. Sitemaps y candidatas: hasta ${coverage.maxCandidates}.` : `Fast mode: up to ${coverage.maxCrawlDepth} link levels and ${coverage.maxCrawlPagesPerDomain} crawled pages per domain. Sitemaps and candidates: up to ${coverage.maxCandidates}.`)}</p>` : ''}
       </div>
     </details>
 
