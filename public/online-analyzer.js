@@ -33,7 +33,7 @@ export async function analyzeOnline(input, progress = () => {}) {
   for (let index = 0; index < selected.length; index += 1) {
     progress('analysis', index, selected.length);
     const item = selected[index];
-    const page = await analyzePage(item, language, minWords, minFragmentWords, dictionary, input.htmlInput);
+    const page = await analyzePage(item, language, minWords, minFragmentWords, dictionary, input.htmlInput, input.turnstileToken);
     if (page.status === 'analyzed') {
       const duplicate = seen.get(page.contentFingerprint);
       if (duplicate) {
@@ -45,6 +45,13 @@ export async function analyzeOnline(input, progress = () => {}) {
     }
     delete page.contentFingerprint;
     pages.push(page);
+  }
+  const successfulPages = pages.filter(page => page.status === 'analyzed');
+  if (!successfulPages.length && pages.length) {
+    const detail = pages.map(page => page.reason).filter(Boolean)[0];
+    throw new Error(language === 'es'
+      ? `No se pudo descargar y analizar la página.${detail ? ` ${detail}` : ''}`
+      : `The page could not be retrieved and analysed.${detail ? ` ${detail}` : ''}`);
   }
   return makeResult({ language, scope, candidates, selected, pages, domains, input, dictionary, minWords, minFragmentWords });
 }
@@ -58,9 +65,9 @@ async function loadDictionary(language) {
   return dictionaries.get(language);
 }
 
-async function analyzePage(item, language, minWords, minFragmentWords, dictionary, localHtml) {
+async function analyzePage(item, language, minWords, minFragmentWords, dictionary, localHtml, turnstileToken) {
   try {
-    const fetched = item.url.startsWith('local-html://') ? { url: item.url, html: localHtml, rendering: 'local' } : await getHtml(item.url);
+    const fetched = item.url.startsWith('local-html://') ? { url: item.url, html: localHtml, rendering: 'local' } : await getHtml(item.url, turnstileToken);
     const document = new DOMParser().parseFromString(fetched.html, 'text/html');
     const title = clean(document.title || item.url).slice(0, 160) || item.url;
     const declared = document.documentElement.lang?.slice(0, 2).toLowerCase() || null;
@@ -84,8 +91,8 @@ async function analyzePage(item, language, minWords, minFragmentWords, dictionar
   }
 }
 
-async function getHtml(url) {
-  const response = await fetch('/api/fetch', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) });
+async function getHtml(url, turnstileToken) {
+  const response = await fetch('/api/fetch', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url, turnstileToken }) });
   const result = await response.json();
   if (!response.ok || result.error) throw new Error(result.error || 'The page could not be retrieved.');
   return result;

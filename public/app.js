@@ -323,7 +323,11 @@ async function getTurnstileToken() {
     };
     turnstileWidgetId = turnstile.render(target, {
       sitekey: TURNSTILE_SITE_KEY,
-      size: 'invisible',
+      // "invisible" is not a valid size in the current Turnstile API. Keep the
+      // challenge out of the way for legitimate visitors, showing it only if
+      // Cloudflare needs interaction.
+      size: 'flexible',
+      appearance: 'interaction-only',
       execution: 'execute',
       action: 'readability-fetch',
       'response-field': false,
@@ -570,6 +574,10 @@ function syncScope() {
   document.querySelector('.sample-size-field')?.classList.toggle('hidden', scope === 'page');
   document.querySelector('#mainInputLabel').textContent = scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
   document.querySelector('#mainInputHint').textContent = scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
+  // Preparing candidates is meaningful only when a local complete-domain run
+  // will analyse several URLs afterwards. For one URL or a local HTML file it
+  // produced a legitimate but misleading "0 analysed" report.
+  estimateButton.classList.toggle('hidden', inputSource === 'html' || scope === 'page');
   estimateButton.querySelector('span:last-child').textContent = inputSource === 'html' ? dictionary.prepareHtml : scope === 'page' ? dictionary.preparePage : dictionary.estimate;
   syncIntensityField();
   renderModeChoices();
