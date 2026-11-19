@@ -1,8 +1,8 @@
-# Web Readability Radar
+# Web Readability Radar — análisis de legibilidad web
 
-**Open-source web readability analysis for Spanish and English.**
+**Herramienta abierta para analizar la legibilidad de páginas web en español e inglés.**
 
-[Use the web tool](https://readabilityradar.com) · [Local apps for Windows, macOS and Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+[Abrir la herramienta web](https://readabilityradar.com) · [Descargas para Windows, Mac y Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest) · [Documentación técnica](Web_Readability_Radar_technical_documentation.pdf) · [Licencia MIT](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses
 their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
@@ -14,18 +14,30 @@ reproducible accessibility and readability audits.
 > cada persona: no requiere un servidor de pago ni envía los textos analizados
 > a un servicio externo.
 
-## Start here
+## Empieza aquí
 
-| If you want to… | Choose this |
+| Si quieres… | Elige… |
 | --- | --- |
-| Check a small website immediately, without installing anything | [Web edition](https://readabilityradar.com) |
-| Analyse a whole domain with sitemaps, many pages or JavaScript-rendered content | [Local full edition for your operating system](https://github.com/snavasleon/readabilityradar.com/releases/latest) |
-| Inspect, reproduce or modify the project | Download this repository and run the local edition |
+| Analizar una página web o un archivo HTML sin instalar nada | [Herramienta web](https://readabilityradar.com) |
+| Analizar un dominio completo, sitemaps, muchas páginas o contenido con JavaScript | [Aplicación local para tu sistema](https://github.com/snavasleon/readabilityradar.com/releases/latest) |
+| Revisar, reproducir o modificar el proyecto | Descargar este repositorio y usar la edición local |
 
-Download the local app for your operating system, open it and leave its small
-local-engine window running. Then use the website normally and choose **Full
-analysis on this computer**. The browser asks once for permission to connect
-only to that application on the same computer.
+Descarga la aplicación local que corresponda, ábrela y deja abierta su pequeña
+ventana. Después usa normalmente la web y elige **Dominio completo**. El
+navegador pide una vez permiso para conectarse solo a esa aplicación en el
+mismo ordenador.
+
+### Descargas directas
+
+| Tu equipo | Archivo | Descarga |
+| --- | --- | --- |
+| Windows de 64 bits | Aplicación `.exe` | [Descargar para Windows](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) |
+| Mac con chip Apple (M1, M2, M3, M4…) | Aplicación `.app` | [Descargar para Mac con chip Apple](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-apple-silicon.app.zip) |
+| Mac con procesador Intel | Aplicación `.app` | [Descargar para Mac Intel](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-intel.app.zip) |
+| Linux de 64 bits | Paquete ejecutable | [Descargar para Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-linux-x64.tar.gz) |
+
+En Mac, abre el menú Apple  → **Acerca de este Mac** para saber si el equipo
+tiene un chip Apple o un procesador Intel.
 
 ## Choose an edition
 
@@ -59,7 +71,7 @@ heavy work:
 
 1. Download the matching local application from the
    [latest release](https://github.com/snavasleon/readabilityradar.com/releases/latest):
-   Windows `.exe`, macOS `.app`, or Linux package. It includes the local engine;
+   Windows `.exe`, macOS `.app` (Apple Silicon or Intel), or Linux package. It includes the local engine;
    Node.js does not need to be installed for these packaged editions.
    It starts silently and leaves the existing browser tab unchanged; keep the
    application open while using the full mode.

@@ -91,4 +91,20 @@ jobs:
       - name: Attach all packages to the tagged release
         uses: softprops/action-gh-release@v2
         with:
+          name: Web Readability Radar ${{ github.ref_name }} — aplicaciones locales
+          body: |
+            ## Aplicaciones locales de Web Readability Radar
+
+            Esta versión permite ejecutar el análisis completo de dominios en el propio ordenador: sitemaps, enlaces internos, contenido dinámico y hasta 10.000 páginas candidatas. Los resultados se muestran en la web y el trabajo pesado permanece en el equipo de la persona usuaria.
+
+            **Elige una descarga:**
+
+            - **Windows (64 bits):** `Web-Readability-Radar.exe`
+            - **Mac con chip Apple (M1, M2, M3, M4…):** `Web-Readability-Radar-macos-apple-silicon.app.zip`
+            - **Mac Intel:** `Web-Readability-Radar-macos-intel.app.zip`
+            - **Linux (64 bits):** `Web-Readability-Radar-linux-x64.tar.gz`
+
+            En macOS, abre el menú Apple  → **Acerca de este Mac** si no sabes qué procesador tiene tu equipo.
+
+            Las aplicaciones no están firmadas por Apple o Microsoft. El sistema puede solicitar una confirmación de apertura la primera vez. Se incluyen las huellas SHA-256 para verificar los archivos.
           files: release-assets/*
