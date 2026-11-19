@@ -21,13 +21,11 @@
 }
 
 .turnstile-widget {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
+  /* Turnstile stays visually quiet with appearance: interaction-only. Do not
+     clip it: when Cloudflare asks a visitor to verify, the control must be
+     reachable rather than timing out outside the viewport. */
+  margin: 0 0 0.75rem;
+  min-height: 0;
 }
 
 body {
