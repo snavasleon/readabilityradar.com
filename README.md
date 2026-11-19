@@ -1,43 +1,41 @@
-# Web Readability Radar — análisis de legibilidad web
+# Web Readability Radar — web readability analysis
 
-**Herramienta abierta para analizar la legibilidad de páginas web en español e inglés.**
+**An open-source tool for analysing the readability of web pages in Spanish and English.**
 
-[Abrir la herramienta web](https://readabilityradar.com) · [Descargas para Windows, Mac y Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest) · [Documentación técnica](Web_Readability_Radar_technical_documentation.pdf) · [Licencia MIT](LICENSE)
+[Open the web tool](https://readabilityradar.com) · [Downloads for Windows, Mac, and Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses
 their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
 English analysis uses **Flesch Reading Ease**. It is designed for transparent,
 reproducible accessibility and readability audits.
 
-> **En español.** Herramienta abierta para analizar la legibilidad de páginas
-> web en español e inglés. La edición completa se ejecuta en el ordenador de
-> cada persona: no requiere un servidor de pago ni envía los textos analizados
-> a un servicio externo.
+> The complete edition runs on each person's computer: it does not require a
+> paid server and does not send analysed text to an external service.
 
-## Empieza aquí
+## Start here
 
-| Si quieres… | Elige… |
+| If you want to… | Choose… |
 | --- | --- |
-| Analizar una página web o un archivo HTML sin instalar nada | [Herramienta web](https://readabilityradar.com) |
-| Analizar un dominio completo, sitemaps, muchas páginas o contenido con JavaScript | [Aplicación local para tu sistema](https://github.com/snavasleon/readabilityradar.com/releases/latest) |
-| Revisar, reproducir o modificar el proyecto | Descargar este repositorio y usar la edición local |
+| Analyse one web page or an HTML file without installing anything | [Web edition](https://readabilityradar.com) |
+| Analyse a complete domain, sitemaps, many pages, or JavaScript-rendered content | [Local application for your operating system](https://github.com/snavasleon/readabilityradar.com/releases/latest) |
+| Inspect, reproduce, or modify the project | Download this repository and run the local edition |
 
-Descarga la aplicación local que corresponda, ábrela y deja abierta su pequeña
-ventana. Después usa normalmente la web y elige **Dominio completo**. El
-navegador pide una vez permiso para conectarse solo a esa aplicación en el
-mismo ordenador.
+Download the matching local application, open it, and leave its small launcher
+window open. Then use the website normally and choose **Complete domain**. The
+browser asks once for permission to connect only to that application on the
+same computer.
 
-### Descargas directas
+### Direct downloads
 
-| Tu equipo | Archivo | Descarga |
+| Your computer | File | Download |
 | --- | --- | --- |
-| Windows de 64 bits | Aplicación `.exe` | [Descargar para Windows](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) |
-| Mac con chip Apple (M1, M2, M3, M4…) | Aplicación `.app` | [Descargar para Mac con chip Apple](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-apple-silicon.app.zip) |
-| Mac con procesador Intel | Aplicación `.app` | [Descargar para Mac Intel](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-intel.app.zip) |
-| Linux de 64 bits | Paquete ejecutable | [Descargar para Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-linux-x64.tar.gz) |
+| 64-bit Windows | `.exe` application | [Download for Windows](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) |
+| Mac with an Apple chip (M1, M2, M3, M4…) | `.app` application | [Download for Mac with an Apple chip](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-apple-silicon.app.zip) |
+| Mac with an Intel processor | `.app` application | [Download for Mac Intel](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-intel.app.zip) |
+| 64-bit Linux | Executable package | [Download for Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-linux-x64.tar.gz) |
 
-En Mac, abre el menú Apple  → **Acerca de este Mac** para saber si el equipo
-tiene un chip Apple o un procesador Intel.
+On a Mac, open the Apple  menu → **About This Mac** to check whether the
+computer has an Apple chip or an Intel processor.
 
 ## Choose an edition
 

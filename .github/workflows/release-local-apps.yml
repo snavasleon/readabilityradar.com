@@ -91,20 +91,20 @@ jobs:
       - name: Attach all packages to the tagged release
         uses: softprops/action-gh-release@v2
         with:
-          name: Web Readability Radar ${{ github.ref_name }} — aplicaciones locales
+          name: Web Readability Radar ${{ github.ref_name }} — local applications
           body: |
-            ## Aplicaciones locales de Web Readability Radar
+            ## Web Readability Radar local applications
 
-            Esta versión permite ejecutar el análisis completo de dominios en el propio ordenador: sitemaps, enlaces internos, contenido dinámico y hasta 10.000 páginas candidatas. Los resultados se muestran en la web y el trabajo pesado permanece en el equipo de la persona usuaria.
+            This release runs complete-domain analysis on the person's own computer: sitemaps, internal links, dynamic content, and up to 10,000 candidate pages. Results appear in the website interface while the intensive work stays on the user's computer.
 
-            **Elige una descarga:**
+            **Choose a download:**
 
-            - **Windows (64 bits):** `Web-Readability-Radar.exe`
-            - **Mac con chip Apple (M1, M2, M3, M4…):** `Web-Readability-Radar-macos-apple-silicon.app.zip`
+            - **64-bit Windows:** `Web-Readability-Radar.exe`
+            - **Mac with an Apple chip (M1, M2, M3, M4…):** `Web-Readability-Radar-macos-apple-silicon.app.zip`
             - **Mac Intel:** `Web-Readability-Radar-macos-intel.app.zip`
-            - **Linux (64 bits):** `Web-Readability-Radar-linux-x64.tar.gz`
+            - **64-bit Linux:** `Web-Readability-Radar-linux-x64.tar.gz`
 
-            En macOS, abre el menú Apple  → **Acerca de este Mac** si no sabes qué procesador tiene tu equipo.
+            On a Mac, open Apple  → **About This Mac** if you do not know its processor.
 
-            Las aplicaciones no están firmadas por Apple o Microsoft. El sistema puede solicitar una confirmación de apertura la primera vez. Se incluyen las huellas SHA-256 para verificar los archivos.
+            The applications are not signed by Apple or Microsoft. Your system may ask you to confirm the first launch. SHA-256 checksums are included to verify the downloaded files.
           files: release-assets/*
