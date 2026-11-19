@@ -10,6 +10,10 @@ const MAX_REDIRECTS = 4;
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+      return Response.redirect(url.toString(), 308);
+    }
     if (url.hostname === 'www.readabilityradar.com') {
       return Response.redirect(`https://readabilityradar.com${url.pathname}${url.search}`, 301);
     }
