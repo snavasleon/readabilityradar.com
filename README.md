@@ -8,10 +8,14 @@ Web Readability Radar identifies complete text blocks on webpages and assesses t
 
 ## Choose an edition
 
-| Edition | Where it runs | Coverage | Best for |
-| --- | --- | --- |
-| **Web edition** | [readabilityradar.com](https://readabilityradar.com) | One web page or one local HTML file | Immediate checks without installation |
-| **Windows full edition** | Your own Windows computer | Up to 10,000 candidate pages; sitemaps, internal links, robots.txt, and optional local browser rendering | Large, reproducible audits and JavaScript-heavy websites |
+### Web edition
+
+Use [readabilityradar.com](https://readabilityradar.com) to review **one web
+page** or **one local HTML file** immediately, without installing anything.
+
+### Windows full edition
+
+Use the [Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) for complete-domain audits: up to **10,000 candidate pages**, sitemaps, internal links, `robots.txt`, and optional local browser rendering.
 
 The web edition calculates results in the visitor's browser. It does not store submitted URLs, page text, reports, or results. Complete-domain analysis uses the Windows application and keeps the intensive work on the visitor's computer.
 
