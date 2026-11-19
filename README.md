@@ -13,6 +13,16 @@ Web Readability Radar identifies complete text blocks on webpages and assesses t
 Use [readabilityradar.com](https://readabilityradar.com) to review **one web
 page** or **one local HTML file** immediately, without installing anything.
 
+Each completed analysis offers two printable reports:
+
+- **Brief report:** the reviewed scope, key result, up to five priorities, and
+  the limits of the result in plain language.
+- **Full report:** the calculation method, validation checks, page-level
+  results, all analysed fragments, traceability, and references.
+
+Readability scores guide text review. They are not a percentage of reader
+comprehension and do not certify accessibility or legal compliance.
+
 ### Windows full edition
 
 Use the [Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) for complete-domain audits: up to **10,000 candidate pages**, sitemaps, internal links, `robots.txt`, and optional local browser rendering.
