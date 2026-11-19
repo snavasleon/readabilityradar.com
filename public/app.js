@@ -886,7 +886,10 @@ async function runAnalysis(estimateOnly) {
       estimateOnly,
       maxPages: scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value),
       samplingMode: intensity === 'fast' && scope === 'domain' ? 'random' : 'all',
-      fragmentLimit: intensity === 'fast' ? 'top10' : null,
+      // A page or a local HTML file is already the complete unit selected by
+      // the visitor. Show every eligible fragment; the top-10 limit belongs
+      // only to a fast, multi-page domain sample.
+      fragmentLimit: intensity === 'fast' && scope === 'domain' ? 'top10' : null,
       minWords: document.querySelector('#minWords').value,
       minFragmentWords: document.querySelector('#minFragmentWords').value,
       htmlInput: localHtml?.content ?? '',
