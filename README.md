@@ -1,177 +1,60 @@
-# Web Readability Radar — web readability analysis
+# Web Readability Radar
 
-**An open-source tool for analysing the readability of web pages in Spanish and English.**
+**Open-source web readability analysis for Spanish and English.**
 
-[Open the web tool](https://readabilityradar.com) · [Downloads for Windows, Mac, and Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+[Open the web tool](https://readabilityradar.com) · [Download the Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
 
-Web Readability Radar identifies complete text blocks on webpages and assesses
-their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**;
-English analysis uses **Flesch Reading Ease**. It is designed for transparent,
-reproducible accessibility and readability audits.
-
-> The complete edition runs on each person's computer: it does not require a
-> paid server and does not send analysed text to an external service.
-
-## Start here
-
-| If you want to… | Choose… |
-| --- | --- |
-| Analyse one web page or an HTML file without installing anything | [Web edition](https://readabilityradar.com) |
-| Analyse a complete domain, sitemaps, many pages, or JavaScript-rendered content | [Local application for your operating system](https://github.com/snavasleon/readabilityradar.com/releases/latest) |
-| Inspect, reproduce, or modify the project | Download this repository and run the local edition |
-
-Download the matching local application, open it, and leave its small launcher
-window open. Then use the website normally and choose **Complete domain**. The
-browser asks once for permission to connect only to that application on the
-same computer.
-
-### Direct downloads
-
-| Your computer | File | Download |
-| --- | --- | --- |
-| 64-bit Windows | `.exe` application | [Download for Windows](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) |
-| Mac with an Apple chip (M1, M2, M3, M4…) | `.app` application | [Download for Mac with an Apple chip](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-apple-silicon.app.zip) |
-| Mac with an Intel processor | `.app` application | [Download for Mac Intel](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-intel.app.zip) |
-| 64-bit Linux | Executable package | [Download for Linux](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-linux-x64.tar.gz) |
-
-On a Mac, open the Apple  menu → **About This Mac** to check whether the
-computer has an Apple chip or an Intel processor.
+Web Readability Radar identifies complete text blocks on webpages and assesses their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**; English analysis uses **Flesch Reading Ease**. It is designed for transparent, reproducible accessibility and readability audits.
 
 ## Choose an edition
 
-This repository contains **two different editions**. They share the same
-readability formulas and interface, but they are intended for different uses.
-
 | Edition | Where it runs | Coverage | Best for |
-| --- | --- | --- | --- |
-| **Public web edition** | [readabilityradar.com](https://readabilityradar.com) | One web page or one local HTML file | Immediate checks without installation |
-| **Local full edition** | Your own Windows, macOS or Linux computer | Up to 10,000 candidate pages; sitemaps, internal links, robots.txt and optional local browser rendering | Large, reproducible audits and JavaScript-heavy websites |
+| --- | --- | --- |
+| **Web edition** | [readabilityradar.com](https://readabilityradar.com) | One web page or one local HTML file | Immediate checks without installation |
+| **Windows full edition** | Your own Windows computer | Up to 10,000 candidate pages; sitemaps, internal links, robots.txt, and optional local browser rendering | Large, reproducible audits and JavaScript-heavy websites |
 
-The public web edition calculates results in each visitor's browser and does
-not store submitted URLs, page text, reports or results. Full-domain analysis
-uses the local application.
+The web edition calculates results in the visitor's browser. It does not store submitted URLs, page text, reports, or results. Complete-domain analysis uses the Windows application and keeps the intensive work on the visitor's computer.
+
+## Windows full edition
+
+1. [Download Web Readability Radar for Windows](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe).
+2. Open `Web-Readability-Radar.exe` and leave its small launcher window open.
+3. Open [readabilityradar.com](https://readabilityradar.com) and choose **Complete domain**.
+4. The browser asks once for permission to connect only to the local application on the same computer. Allow it to start the full analysis.
+
+No Node.js installation is required. The application includes the local engine. The browser tab stays open and results appear there; the Windows application does the crawling, optional JavaScript rendering, and report generation.
+
+Windows SmartScreen may request confirmation the first time the unsigned application is opened. Each release includes `SHA256SUMS.txt` so that the download can be verified.
 
 ## Public-service protection
 
-The public page-retrieval endpoint is protected by Cloudflare Turnstile. Before
-retrieving a web page, the browser completes Cloudflare's managed human check
-and the Worker validates its one-time token on the server side. The public site
-key is included in the client code; the validation secret is stored only as the
-encrypted `TURNSTILE_SECRET_KEY` Worker secret and is never committed to this
-repository. Turnstile is used to reduce automated abuse; it does not create
-user accounts or store analysis results.
+The public page-retrieval endpoint is protected by Cloudflare Turnstile. Before retrieving a web page, the browser completes Cloudflare's managed human check and the Worker validates its one-time token. The validation secret is stored only as an encrypted Cloudflare Worker secret and is never committed to this repository. Turnstile reduces automated abuse; it does not create user accounts or store analysis results.
 
-## Use full local capacity from the website
+## Run from source
 
-The public website can also act as the interface for the local full engine.
-This keeps the website workflow while the visitor's own computer performs the
-heavy work:
-
-1. Download the matching local application from the
-   [latest release](https://github.com/snavasleon/readabilityradar.com/releases/latest):
-   Windows `.exe`, macOS `.app` (Apple Silicon or Intel), or Linux package. It includes the local engine;
-   Node.js does not need to be installed for these packaged editions.
-   It starts silently and leaves the existing browser tab unchanged; keep the
-   application open while using the full mode.
-2. Visit [readabilityradar.com](https://readabilityradar.com), accept the
-   privacy notice and choose the analysis language.
-3. Choose **Full analysis on this computer** instead of quick online analysis.
-4. Chrome asks for permission to connect **only to the local application on
-   this computer**. Grant that permission; the website then detects the local
-   engine at `127.0.0.1` and sends the analysis request to it.
-
-The local engine accepts browser requests only from `readabilityradar.com` and
-`www.readabilityradar.com`. Full-mode crawling, JavaScript rendering, reports
-and results remain on the visitor's computer; the public website does not
-receive or store the resulting text or report.
-
-The ZIP/source-code route below remains available for advanced users who want
-to inspect, reproduce or modify the application.
-
-## Download and run the local full edition
-
-1. On this repository page, select **Code → Download ZIP**, then extract it.
-2. Install [Node.js 18 or newer](https://nodejs.org/) if it is not already
-   available.
-3. On Windows, double-click `launch-windows.bat`.
-4. On macOS/Linux, run `sh launch-mac-linux.sh`.
-
-The local edition is free and runs on the user's computer. A local Chrome,
-Chromium or Edge installation is optional but enables rendering for pages whose
-useful content is produced with JavaScript.
-
-## Packaged local applications
-
-The release page provides the simplest route for participants: a Windows
-`.exe`, separate unsigned macOS `.app` bundles for Apple Silicon and Intel
-Macs, and a Linux executable package. They are built from the same open source.
-Windows can be built locally with:
+For inspection or development, install Node.js 18 or later, then run:
 
 ```text
 npm install
+npm start
+```
+
+For a portable Windows build:
+
+```text
 npm run build:windows
 ```
 
-The resulting Windows file is `dist/Web-Readability-Radar.exe`. The three
-packages include the Node.js runtime. Until a project can fund platform signing,
-Windows SmartScreen or macOS Gatekeeper may ask the person to explicitly allow
-the first launch. Releases publish checksums so recipients can verify the files
-they downloaded.
-
-## Local quick start
-
-On Windows:
-
-1. Open this folder.
-2. Double-click `launch-windows.bat`.
-3. The browser opens the local app automatically.
-
-On macOS or Linux:
-
-1. Install Node.js 18 or newer if it is not already installed.
-2. Run `sh launch-mac-linux.sh` from this folder.
+The resulting file is `dist/Web-Readability-Radar.exe`.
 
 ## Included
 
-- English default interface, with an ES/EN language selector.
-- Full-domain analysis or exact-page analysis.
-- Fast mode explores a random page sample (12 by default, configurable from 1 to 10,000), then selects up to 10 random eligible fragments without replacement or repeated text. Starting and required pages are always included and may expand the page sample. For a single page or local HTML, fragments are sampled from that source. Selection does not depend on difficulty; selected fragments are subsequently sorted from hardest to easiest. Complete returns all eligible fragments from detected pages, up to the 10,000-page limit. The summary and full PDF cover all eligible content on explored pages, not only the 10 displayed fragments. Sampling seeds and chosen fragment IDs are recorded in the analysis criteria.
-- Spanish readability: Szigriszt-Pazos and INFLESZ.
-- English readability: Flesch Reading Ease.
-- CSV export for pages, sampling, and fragments.
-- Source links for every detected fragment.
-- Analysis can render JavaScript-heavy pages with the local browser when the initial HTML exposes little text.
+- `public/`: browser interface and client-side analysis.
+- `cloudflare/`: Cloudflare Worker and deployment configuration.
+- `server.mjs`: local full-domain engine.
+- `resources/`: Spanish and English syllable resources.
+- `validation/`: reproducibility material and validation outputs.
 
-## Requirement
+## License
 
-The Windows portable package can include its own runtime in `runtime/node.exe`. If this folder is distributed without that runtime, install Node.js 18 or newer. No `npm install` step is required.
-
-On macOS and Linux, the launcher uses the system `node` command. Dynamic-page rendering uses an installed Chrome, Chromium, or Microsoft Edge when available. If no compatible browser is installed, the app still works with the initial HTML returned by each page.
-
-## Folder Guide
-
-- `launch-windows.bat`: start on Windows.
-- `launch-mac-linux.sh`: start on macOS or Linux; see `MACOS.md`.
-- `validation/README.md`: open the single `validation-results.xlsx` workbook. Green tabs contain Spanish validation and blue tabs contain English validation; yellow INFLESZ entry cells are in `Spanish Summary`. HTML tests and technical CSV files remain in their language folders.
-- `public`, `runtime`, `server.mjs`, `package.json`: application files.
-
-## Reports and Exports
-
-After analysis, use Download report for brief/full PDF or Excel results. The browser print dialog saves the report as PDF. Summary, Explore and Methodology are the three main areas; Explore reuses the Fragments, Pages and Sampling views. CSV downloads remain available there. README documentation is the first Excel worksheet, not a separate web button.
-
-Spanish processing follows the supplied INFLESZ operational documentation for sentence delimiters, numeric/symbol words, recognized abbreviations and hyphenated compounds. This does not establish exact agreement with the external INFLESZ program: that comparison remains pending. English processing is separate. See `validation/technical/README.md` for conventions, ambiguous cases and reproduction commands.
-
-## Privacy
-
-Analysis runs on your computer. Entered URLs are requested from your computer. Dynamic pages may open a local headless browser. Results are not automatically stored on an external server. Stop the local server with Control+C.
-
-## Public Cloudflare edition
-
-The `cloudflare/` folder provides a no-cost public edition. Cloudflare serves
-the interface and safely retrieves public HTML, while the visitor's browser
-performs the readability calculation, visualisation and PDF generation. It does
-not store URLs, page text or reports. It analyzes one specified web page or a
-local HTML file; the local edition provides full-domain analysis.
-
-The current public deployment and remaining hardening tasks are recorded in
-[DEPLOYMENT.md](DEPLOYMENT.md).
+MIT. See [LICENSE](LICENSE).

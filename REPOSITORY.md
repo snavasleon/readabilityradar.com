@@ -14,7 +14,7 @@ inspect and reproduce the project.
 
 ## Local use
 
-Use `launch-windows.bat` on Windows. For macOS and Linux, follow `MACOS.md`.
+Use `launch-windows.bat` on Windows.
 The portable Node runtime is deliberately excluded from the public repository;
 install Node.js 18 or later when it is not already available.
 

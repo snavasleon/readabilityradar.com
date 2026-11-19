@@ -1,4 +1,4 @@
-name: Build local applications
+name: Build Windows application
 
 on:
   push:
@@ -10,31 +10,9 @@ permissions:
   contents: write
 
 jobs:
-  package:
-    name: ${{ matrix.label }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: Windows
-            os: windows-latest
-            script: build:windows
-            artifact: Web-Readability-Radar.exe
-          - label: macOS Apple Silicon
-            # pkg can cross-package the self-contained Node runtime.  Building
-            # here avoids the scarce GitHub-hosted macOS runners.
-            os: ubuntu-latest
-            script: build:macos-apple-silicon
-            artifact: Web-Readability-Radar-macos-arm64
-          - label: macOS Intel
-            os: ubuntu-latest
-            script: build:macos-intel
-            artifact: Web-Readability-Radar-macos-x64
-          - label: Linux
-            os: ubuntu-latest
-            script: build:linux
-            artifact: Web-Readability-Radar-linux-x64.tar.gz
-    runs-on: ${{ matrix.os }}
+  package-and-release:
+    name: Build and publish Windows application
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,69 +20,25 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run ${{ matrix.script }}
-      - name: Rename macOS binary
-        if: matrix.label == 'macOS Apple Silicon' || matrix.label == 'macOS Intel'
-        shell: bash
-        run: mv dist/Web-Readability-Radar "dist/${{ matrix.artifact }}"
-      - name: Package Linux application
-        if: matrix.label == 'Linux'
+      - run: npm run build:windows
+      - name: Write checksum
         shell: bash
         run: |
-          chmod +x dist/Web-Readability-Radar
-          tar -C dist -czf "dist/${{ matrix.artifact }}" Web-Readability-Radar
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.label }}
-          path: dist/${{ matrix.artifact }}
-
-  release:
-    name: Publish packages
-    needs: package
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: release-assets
-          merge-multiple: true
-      - name: Package macOS applications separately
-        shell: bash
-        run: |
-          mkdir -p "release-assets/Web Readability Radar Apple Silicon.app/Contents/MacOS"
-          mv release-assets/Web-Readability-Radar-macos-arm64 "release-assets/Web Readability Radar Apple Silicon.app/Contents/MacOS/Web Readability Radar"
-          chmod +x "release-assets/Web Readability Radar Apple Silicon.app/Contents/MacOS/Web Readability Radar"
-          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<plist version="1.0"><dict><key>CFBundleDisplayName</key><string>Web Readability Radar</string><key>CFBundleExecutable</key><string>Web Readability Radar</string><key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "release-assets/Web Readability Radar Apple Silicon.app/Contents/Info.plist"
-          (cd release-assets && zip -qry Web-Readability-Radar-macos-apple-silicon.app.zip "Web Readability Radar Apple Silicon.app")
-          rm -rf "release-assets/Web Readability Radar Apple Silicon.app"
-          mkdir -p "release-assets/Web Readability Radar Intel.app/Contents/MacOS"
-          mv release-assets/Web-Readability-Radar-macos-x64 "release-assets/Web Readability Radar Intel.app/Contents/MacOS/Web Readability Radar"
-          chmod +x "release-assets/Web Readability Radar Intel.app/Contents/MacOS/Web Readability Radar"
-          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<plist version="1.0"><dict><key>CFBundleDisplayName</key><string>Web Readability Radar</string><key>CFBundleExecutable</key><string>Web Readability Radar</string><key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "release-assets/Web Readability Radar Intel.app/Contents/Info.plist"
-          (cd release-assets && zip -qry Web-Readability-Radar-macos-intel.app.zip "Web Readability Radar Intel.app")
-          rm -rf "release-assets/Web Readability Radar Intel.app"
-      - name: Write checksums
-        shell: bash
-        run: |
-          cd release-assets
-          sha256sum * > SHA256SUMS.txt
-      - name: Attach all packages to the tagged release
+          cd dist
+          sha256sum Web-Readability-Radar.exe > SHA256SUMS.txt
+      - name: Publish Windows release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: Web Readability Radar ${{ github.ref_name }} — local applications
+          name: Web Readability Radar ${{ github.ref_name }} — Windows application
           body: |
-            ## Web Readability Radar local applications
+            ## Web Readability Radar for Windows
 
-            This release runs complete-domain analysis on the person's own computer: sitemaps, internal links, dynamic content, and up to 10,000 candidate pages. Results appear in the website interface while the intensive work stays on the user's computer.
+            This portable Windows application runs complete-domain analysis on the user's own computer: sitemaps, internal links, dynamic content, and up to 10,000 candidate pages. Results appear in the website interface while the intensive work stays on the user's computer.
 
-            **Choose a download:**
+            Download `Web-Readability-Radar.exe`, open it, and then choose **Complete domain** at [readabilityradar.com](https://readabilityradar.com).
 
-            - **64-bit Windows:** `Web-Readability-Radar.exe`
-            - **Mac with an Apple chip (M1, M2, M3, M4…):** `Web-Readability-Radar-macos-apple-silicon.app.zip`
-            - **Mac Intel:** `Web-Readability-Radar-macos-intel.app.zip`
-            - **64-bit Linux:** `Web-Readability-Radar-linux-x64.tar.gz`
-
-            On a Mac, open Apple  → **About This Mac** if you do not know its processor.
-
-            The applications are not signed by Apple or Microsoft. Your system may ask you to confirm the first launch. SHA-256 checksums are included to verify the downloaded files.
-          files: release-assets/*
+            Windows may ask you to confirm the first launch because the application is not code-signed. `SHA256SUMS.txt` is included to verify the downloaded file.
+          files: |
+            dist/Web-Readability-Radar.exe
+            dist/SHA256SUMS.txt

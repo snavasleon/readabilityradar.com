@@ -354,9 +354,6 @@ const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:5548
 const RELEASES_PAGE = 'https://github.com/snavasleon/readabilityradar.com/releases/latest';
 const LOCAL_ENGINE_FILES = {
   windows: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe',
-  macosApple: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-apple-silicon.app.zip',
-  macosIntel: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-macos-intel.app.zip',
-  linux: 'https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar-linux-x64.tar.gz',
 };
 
 function localEngineDownload() {
@@ -364,20 +361,7 @@ function localEngineDownload() {
   if (/windows/i.test(agent)) {
     return { href: LOCAL_ENGINE_FILES.windows, es: 'Descargar aplicación para Windows', en: 'Download app for Windows' };
   }
-  if (/android|linux/i.test(agent)) {
-    return { href: LOCAL_ENGINE_FILES.linux, es: 'Descargar aplicación para Linux', en: 'Download app for Linux' };
-  }
-  if (/macintosh|mac os x|macintel/i.test(agent)) {
-    // Safari and several Chromium versions intentionally report both Mac
-    // architectures as "MacIntel", so the person can choose explicitly.
-    return {
-      href: LOCAL_ENGINE_FILES.macosApple,
-      macos: true,
-      es: 'Descargar para Mac con chip Apple',
-      en: 'Download for Mac with Apple chip',
-    };
-  }
-  return { href: RELEASES_PAGE, es: 'Ver descargas disponibles', en: 'View available downloads' };
+  return { href: RELEASES_PAGE, supported: false, es: 'Disponible solo para Windows', en: 'Available for Windows only' };
 }
 
 let privacyAccepted = false;
@@ -420,7 +404,6 @@ const executionModeDialog = document.querySelector('#executionModeDialog');
 const privacyAccept = document.querySelector('#privacyAccept');
 const analysisLanguageAccept = document.querySelector('#analysisLanguageAccept');
 const fullDomainDownload = document.querySelector('#fullDomainDownload');
-const macIntelDownload = document.querySelector('#macIntelDownload');
 const checkLocalEngine = document.querySelector('#checkLocalEngine');
 const executionModeStatus = document.querySelector('#executionModeStatus');
 const engineStatus = document.querySelector('#engineStatus');
@@ -694,17 +677,13 @@ function showExecutionModeDialog() {
     : 'To scan sitemaps, internal links and dynamic content, the analysis runs on your computer. Download and open the free application.';
   fullDomainDownload.href = download.href;
   fullDomainDownload.textContent = isSpanish ? download.es : download.en;
-  fullDomainDownload.setAttribute('download', '');
-  macIntelDownload.hidden = !download.macos;
-  if (download.macos) {
-    macIntelDownload.href = LOCAL_ENGINE_FILES.macosIntel;
-    macIntelDownload.textContent = isSpanish ? 'Mi Mac tiene procesador Intel' : 'My Mac has an Intel processor';
-    macIntelDownload.setAttribute('download', '');
-  }
+  fullDomainDownload.hidden = !download.supported && /windows/i.test(`${navigator.userAgent || ''} ${navigator.platform || ''}`) === false;
+  if (download.supported !== false) fullDomainDownload.setAttribute('download', '');
   checkLocalEngine.textContent = isSpanish ? 'Ya he abierto la aplicación' : 'I have opened the application';
+  checkLocalEngine.hidden = download.supported === false;
   executionModeStatus.innerHTML = isSpanish
-    ? `${download.macos ? 'Si no sabes qué procesador tiene tu Mac, abre el menú Apple  y elige «Acerca de este Mac». ' : ''}Al ejecutarla, se abrirá la edición completa en tu navegador. También puedes volver aquí: cuando detectemos la aplicación, esta ventana se cerrará sola.`
-    : `${download.macos ? 'If you do not know your Mac processor, open the Apple  menu and choose “About This Mac”. ' : ''}When you run it, the complete edition will open in your browser. You can also return here: this window closes automatically when the application is detected.`;
+    ? `${download.supported === false ? 'El análisis de dominio completo con aplicación local está disponible actualmente solo para Windows. ' : ''}Al ejecutarla, se abrirá la edición completa en tu navegador. También puedes volver aquí: cuando detectemos la aplicación, esta ventana se cerrará sola.`
+    : `${download.supported === false ? 'Complete-domain analysis with the local application is currently available only on Windows. ' : ''}When you run it, the complete edition will open in your browser. You can also return here: this window closes automatically when the application is detected.`;
   document.querySelector('main').inert = true;
   executionModeDialog.hidden = false;
   fullDomainDownload.focus();
