@@ -21,11 +21,13 @@ jobs:
             script: build:windows
             artifact: Web-Readability-Radar.exe
           - label: macOS Apple Silicon
-            os: macos-14
+            # pkg can cross-package the self-contained Node runtime.  Building
+            # here avoids the scarce GitHub-hosted macOS runners.
+            os: ubuntu-latest
             script: build:macos-apple-silicon
             artifact: Web-Readability-Radar-macos-arm64
           - label: macOS Intel
-            os: macos-13
+            os: ubuntu-latest
             script: build:macos-intel
             artifact: Web-Readability-Radar-macos-x64
           - label: Linux
@@ -46,7 +48,7 @@ jobs:
         shell: bash
         run: mv dist/Web-Readability-Radar "dist/${{ matrix.artifact }}"
       - name: Package Linux application
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.label == 'Linux'
         shell: bash
         run: |
           chmod +x dist/Web-Readability-Radar
@@ -66,37 +68,24 @@ jobs:
         with:
           path: release-assets
           merge-multiple: true
+      - name: Package macOS applications separately
+        shell: bash
+        run: |
+          mkdir -p "release-assets/Web Readability Radar Apple Silicon.app/Contents/MacOS"
+          mv release-assets/Web-Readability-Radar-macos-arm64 "release-assets/Web Readability Radar Apple Silicon.app/Contents/MacOS/Web Readability Radar"
+          chmod +x "release-assets/Web Readability Radar Apple Silicon.app/Contents/MacOS/Web Readability Radar"
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<plist version="1.0"><dict><key>CFBundleDisplayName</key><string>Web Readability Radar</string><key>CFBundleExecutable</key><string>Web Readability Radar</string><key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "release-assets/Web Readability Radar Apple Silicon.app/Contents/Info.plist"
+          (cd release-assets && zip -qry Web-Readability-Radar-macos-apple-silicon.app.zip "Web Readability Radar Apple Silicon.app")
+          rm -rf "release-assets/Web Readability Radar Apple Silicon.app"
+          mkdir -p "release-assets/Web Readability Radar Intel.app/Contents/MacOS"
+          mv release-assets/Web-Readability-Radar-macos-x64 "release-assets/Web Readability Radar Intel.app/Contents/MacOS/Web Readability Radar"
+          chmod +x "release-assets/Web Readability Radar Intel.app/Contents/MacOS/Web Readability Radar"
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<plist version="1.0"><dict><key>CFBundleDisplayName</key><string>Web Readability Radar</string><key>CFBundleExecutable</key><string>Web Readability Radar</string><key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string><key>CFBundlePackageType</key><string>APPL</string></dict></plist>' > "release-assets/Web Readability Radar Intel.app/Contents/Info.plist"
+          (cd release-assets && zip -qry Web-Readability-Radar-macos-intel.app.zip "Web Readability Radar Intel.app")
+          rm -rf "release-assets/Web Readability Radar Intel.app"
       - name: Write checksums
         shell: bash
         run: |
-          APP="release-assets/Web Readability Radar.app"
-          mkdir -p "$APP/Contents/MacOS"
-          mv release-assets/Web-Readability-Radar-macos-arm64 "$APP/Contents/MacOS/Web Readability Radar.arm64"
-          mv release-assets/Web-Readability-Radar-macos-x64 "$APP/Contents/MacOS/Web Readability Radar.x64"
-          cat > "$APP/Contents/MacOS/Web Readability Radar" <<'LAUNCHER'
-          #!/bin/sh
-          APP_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-          case "$(uname -m)" in
-            arm64) exec "$APP_DIR/Web Readability Radar.arm64" "$@" ;;
-            x86_64) exec "$APP_DIR/Web Readability Radar.x64" "$@" ;;
-            *) echo "This Mac architecture is not supported." >&2; exit 1 ;;
-          esac
-          LAUNCHER
-          chmod +x "$APP/Contents/MacOS/Web Readability Radar" "$APP/Contents/MacOS/Web Readability Radar.arm64" "$APP/Contents/MacOS/Web Readability Radar.x64"
-          cat > "$APP/Contents/Info.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>CFBundleDisplayName</key><string>Web Readability Radar</string>
-            <key>CFBundleExecutable</key><string>Web Readability Radar</string>
-            <key>CFBundleIdentifier</key><string>com.readabilityradar.local-engine</string>
-            <key>CFBundleName</key><string>Web Readability Radar</string>
-            <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleShortVersionString</key><string>${{ github.ref_name }}</string>
-          </dict></plist>
-          PLIST
-          (cd release-assets && zip -qry Web-Readability-Radar-macos-universal.app.zip "Web Readability Radar.app")
-          rm -rf "$APP"
           cd release-assets
           sha256sum * > SHA256SUMS.txt
       - name: Attach all packages to the tagged release

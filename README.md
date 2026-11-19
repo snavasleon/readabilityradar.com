@@ -93,7 +93,7 @@ useful content is produced with JavaScript.
 ## Packaged local applications
 
 The release page provides the simplest route for participants: a Windows
-`.exe`, an unsigned universal macOS `.app` bundle for Apple Silicon and Intel
+`.exe`, separate unsigned macOS `.app` bundles for Apple Silicon and Intel
 Macs, and a Linux executable package. They are built from the same open source.
 Windows can be built locally with:
 
