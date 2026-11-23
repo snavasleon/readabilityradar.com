@@ -7,6 +7,6 @@ repository URL for a formal publication.
 Suggested format:
 
 > Navas-León, S., & Duñabeitia, J. A. (2026). *Web Readability Radar*
-> (Version 1.1.0) [Computer software]. GitHub.
+> (Version 1.1.1) [Computer software]. GitHub.
 > https://github.com/snavasleon/readabilityradar.com
 

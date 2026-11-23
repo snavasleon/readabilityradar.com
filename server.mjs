@@ -1162,7 +1162,7 @@ async function fetchText(url, accept, isAllowedContentType = () => true, timeout
       const response = await awaitWithTimeout(fetch(target, {
         signal: controller.signal,
         headers: {
-          'user-agent': 'WebReadabilityRadar/1.1.0 (+local readability analysis)',
+          'user-agent': 'WebReadabilityRadar/1.1.1 (+local readability analysis)',
           accept,
         },
         redirect: 'follow',
@@ -1216,7 +1216,7 @@ function requestPinnedPublicTarget(target, accept, timeoutMs) {
       ...(url.protocol === 'https:' ? { servername: hostname } : {}),
       headers: {
         host: url.host,
-        'user-agent': 'WebReadabilityRadar/1.1.0 (+local readability analysis)',
+        'user-agent': 'WebReadabilityRadar/1.1.1 (+local readability analysis)',
         accept,
       },
     });

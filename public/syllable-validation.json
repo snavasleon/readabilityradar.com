@@ -20,8 +20,8 @@
     "dictionary_covered_word_types": 4962,
     "dictionary_coverage": 1,
     "heuristic_word_types": 0,
-    "generated_at": "2026-11-23T10:28:23.852Z",
-    "server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+    "generated_at": "2026-11-23T10:49:31.106Z",
+    "server_sha256": "58580ef938edcda85085e97befd04370e468f0e8b7fbc51e2f8f79634938f112",
     "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
     "processing_sha256": "ee3ded23ee1f87418fc6192eaaa5ecabc07197c4e01b3c8f48df8e40683e03e7"
   },
@@ -46,8 +46,8 @@
     "dictionary_coverage": 0.9958,
     "heuristic_word_types": 21,
     "reference_source": "CMU Pronouncing Dictionary, first listed pronunciation",
-    "generated_at": "2026-11-23T10:28:24.143Z",
-    "server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+    "generated_at": "2026-11-23T10:49:31.670Z",
+    "server_sha256": "58580ef938edcda85085e97befd04370e468f0e8b7fbc51e2f8f79634938f112",
     "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
     "processing_sha256": "1d3c90bdd51c6681cfc67dc1af1ba1caeaab0e27663d77dadd45a8d94986d1ec"
   }

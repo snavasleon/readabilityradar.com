@@ -6,8 +6,8 @@
   "proofing_language": "English (United States)",
   "language_id": 1033,
   "metric": "Flesch Reading Ease",
-  "generated_at": "2026-11-23T10:28:23.934077+00:00",
-  "radar_server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+  "generated_at": "2026-11-23T10:49:31.473327+00:00",
+  "radar_server_sha256": "58580ef938edcda85085e97befd04370e468f0e8b7fbc51e2f8f79634938f112",
   "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
   "processing_sha256": "1d3c90bdd51c6681cfc67dc1af1ba1caeaab0e27663d77dadd45a8d94986d1ec",
   "corpus_sha256": "ccc16e912bf20166a550917addbe9a1870383d4e8cdc9eb04c13e7f294187723",
@@ -173,8 +173,8 @@
       }
     ],
     "external_unavailable": [],
-    "generated_at": "2026-11-23T10:28:23.624Z",
-    "radar_server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+    "generated_at": "2026-11-23T10:49:30.912Z",
+    "radar_server_sha256": "58580ef938edcda85085e97befd04370e468f0e8b7fbc51e2f8f79634938f112",
     "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
     "processing_sha256": "ee3ded23ee1f87418fc6192eaaa5ecabc07197c4e01b3c8f48df8e40683e03e7"
   }

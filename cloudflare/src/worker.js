@@ -17,10 +17,10 @@ export default {
     if (url.hostname === 'www.readabilityradar.com') {
       return Response.redirect(`https://readabilityradar.com${url.pathname}${url.search}`, 301);
     }
-    if ((url.pathname === '/demo/es' || url.pathname === '/demo/en') && request.method === 'GET') {
-      const assetUrl = new URL(`${url.pathname}.html`, request.url);
-      return env.ASSETS.fetch(new Request(assetUrl, request));
-    }
+    // Cloudflare Static Assets maps /demo/es and /demo/en to the matching
+    // public/demo/*.html files in its normal fallback below. Calling ASSETS
+    // with the explicit .html path here would make its clean-URL redirect
+    // loop back through this Worker.
     if (url.pathname === '/api/dictionary' && request.method === 'GET') {
       const language = url.searchParams.get('language') === 'en' ? 'en' : 'es';
       return json(language === 'en' ? englishSyllables.entries : spanishSyllables.entries, 200, {
@@ -70,7 +70,7 @@ async function fetchPublicHtml(value) {
         method: 'GET', redirect: 'manual', signal: controller.signal,
         headers: {
           accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1',
-          'user-agent': 'WebReadabilityRadar/1.1.0 (+privacy-preserving client analysis)',
+          'user-agent': 'WebReadabilityRadar/1.1.1 (+privacy-preserving client analysis)',
         },
       });
       if ([301, 302, 303, 307, 308].includes(response.status)) {

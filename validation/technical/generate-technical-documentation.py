@@ -214,8 +214,8 @@ def build(output: Path) -> None:
     ], bulletType="bullet", leftIndent=14, bulletFontName="Helvetica", bulletFontSize=8))
 
     story.extend(heading("8. Citation and release practice", styles, 1))
-    story.append(paragraph("The repository includes <font name='Courier'>CITATION.cff</font>, <font name='Courier'>CITATION.md</font>, and <font name='Courier'>.zenodo.json</font>. The intended cited release is v1.1.0. A Zenodo DOI can be created by enabling the repository in the project owners' Zenodo account and publishing the v1.1.0 Git tag; it cannot be created from source code alone.", styles["Body"]))
-    story.append(paragraph("Suggested software citation: Navas-León, S., &amp; Duñabeitia, J. A. (2026). <i>Web Readability Radar</i> (Version 1.1.0) [Computer software]. GitHub. https://github.com/snavasleon/readabilityradar.com", styles["Body"]))
+    story.append(paragraph(f"The repository includes <font name='Courier'>CITATION.cff</font>, <font name='Courier'>CITATION.md</font>, and <font name='Courier'>.zenodo.json</font>. The intended cited release is v{VERSION}. A Zenodo DOI can be created by enabling the repository in the project owners' Zenodo account and publishing the v{VERSION} Git tag; it cannot be created from source code alone.", styles["Body"]))
+    story.append(paragraph(f"Suggested software citation: Navas-León, S., &amp; Duñabeitia, J. A. (2026). <i>Web Readability Radar</i> (Version {VERSION}) [Computer software]. GitHub. https://github.com/snavasleon/readabilityradar.com", styles["Body"]))
 
     story.extend(heading("References", styles, 1))
     for reference in [
