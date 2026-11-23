@@ -2,6 +2,8 @@
 
 **Open-source web readability analysis for Spanish and English.**
 
+**Authors:** Sergio Navas León and Jon Andoni Duñabeitia — CINC, Universidad Nebrija.
+
 [Open the web tool](https://readabilityradar.com) · [Download the Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [Cite this software](CITATION.cff) · [MIT License](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**; English analysis uses **Flesch Reading Ease**. It is designed for transparent, reproducible accessibility and readability audits.

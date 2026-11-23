@@ -5,10 +5,12 @@
   "description": "Open-source readability analysis for Spanish and English web content.",
   "creators": [
     {
-      "name": "Navas-León, Sergio"
+      "name": "Navas León, Sergio",
+      "affiliation": "CINC, Universidad Nebrija"
     },
     {
-      "name": "Duñabeitia, Jon Andoni"
+      "name": "Duñabeitia, Jon Andoni",
+      "affiliation": "CINC, Universidad Nebrija"
     }
   ],
   "license": "MIT"

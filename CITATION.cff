@@ -8,7 +8,9 @@ license: MIT
 repository-code: "https://github.com/snavasleon/readabilityradar.com"
 url: "https://readabilityradar.com"
 authors:
-  - family-names: "Navas-León"
+  - family-names: "Navas León"
     given-names: "Sergio"
+    affiliation: "CINC, Universidad Nebrija"
   - family-names: "Duñabeitia"
     given-names: "Jon Andoni"
+    affiliation: "CINC, Universidad Nebrija"
