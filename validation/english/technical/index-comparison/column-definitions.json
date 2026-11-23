@@ -49,6 +49,8 @@
   "proofing_language": "Document proofing language explicitly set to English (United States), language ID 1033.",
   "generated_at": "UTC time the paired summary was generated.",
   "radar_server_sha256": "SHA-256 of the Radar server source used to calculate scores.",
+  "core_sha256": "SHA-256 of the shared browser-safe processing core used to calculate scores.",
+  "processing_sha256": "SHA-256 of the shared core plus the exact English syllable dictionary used to calculate scores.",
   "corpus_sha256": "SHA-256 of canonical UTF-8 JSON containing ordered text_id/text objects (compact separators).",
   "comparison_scale": "Primary comparison uses original Radar scores, including negatives, versus Word scores. Bounded metrics are supplementary because Word reports within 0..100.",
   "bounded_mean_radar_score": "Mean Radar score. Supplementary calculation after bounding Radar to 0..100.",

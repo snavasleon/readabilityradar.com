@@ -2,7 +2,7 @@
 
 **Open-source web readability analysis for Spanish and English.**
 
-[Open the web tool](https://readabilityradar.com) · [Download the Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [MIT License](LICENSE)
+[Open the web tool](https://readabilityradar.com) · [Download the Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) · [Technical documentation](Web_Readability_Radar_technical_documentation.pdf) · [Cite this software](CITATION.cff) · [MIT License](LICENSE)
 
 Web Readability Radar identifies complete text blocks on webpages and assesses their readability. Spanish analysis follows **Szigriszt-Pazos / INFLESZ**; English analysis uses **Flesch Reading Ease**. It is designed for transparent, reproducible accessibility and readability audits.
 
@@ -23,13 +23,27 @@ Each completed analysis offers two printable reports:
 Readability scores guide text review. They are not a percentage of reader
 comprehension and do not certify accessibility or legal compliance.
 
-### Windows full edition
+### Full-domain analysis
 
 Use the [Windows application](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe) for complete-domain audits: up to **10,000 candidate pages**, sitemaps, internal links, `robots.txt`, and optional local browser rendering.
 
 The web edition calculates results in the visitor's browser. It does not store submitted URLs, page text, reports, or results. Complete-domain analysis uses the Windows application and keeps the intensive work on the visitor's computer.
 
-## Windows full edition
+## Calculation consistency and evidence
+
+Both editions use the same browser-safe calculation core for HTML extraction,
+language detection, tokenisation, syllable counts, readability scores, and
+stable report identifiers. The validation evidence records a SHA-256
+fingerprint of that core **and** of the exact language-specific syllable
+dictionary used in each calculation. The interface marks a validation result
+as out of date if that fingerprint does not match the installed edition.
+
+The English Microsoft Word comparison is reported on the common 0–100 Flesch
+Reading Ease scale. Raw, unbounded diagnostic values remain in the technical
+validation files only; they are not presented as the user-facing agreement
+measure.
+
+## Use the Windows application
 
 1. [Download Web Readability Radar for Windows](https://github.com/snavasleon/readabilityradar.com/releases/latest/download/Web-Readability-Radar.exe).
 2. Open `Web-Readability-Radar.exe` and leave its small launcher window open.
@@ -43,6 +57,14 @@ Windows SmartScreen may request confirmation the first time the unsigned applica
 ## Public-service protection
 
 The public page-retrieval endpoint is protected by Cloudflare Turnstile. Before retrieving a web page, the browser completes Cloudflare's managed human check and the Worker validates its one-time token. The validation secret is stored only as an encrypted Cloudflare Worker secret and is never committed to this repository. Turnstile reduces automated abuse; it does not create user accounts or store analysis results.
+
+The local Windows bridge accepts requests from the public page only for public
+HTTP(S) addresses. It rejects loopback, private, link-local, metadata, and
+reserved network targets; checks every redirect; and pins each remote request
+to a DNS-resolved public address to prevent DNS rebinding. Requests entering
+through that bridge never trigger the local browser renderer. Turnstile is
+loaded dynamically by the web edition only, so the local application never
+contacts Cloudflare for an analysis.
 
 ## Run from source
 
@@ -60,6 +82,18 @@ npm run build:windows
 ```
 
 The resulting file is `dist/Web-Readability-Radar.exe`.
+
+## Verification
+
+Run the local checks after making a processing or bridge change:
+
+```text
+npm test
+```
+
+They cover documented Spanish processing rules, parity between the web and
+local editions (including URLs, decimal values, and hiatuses), and protection
+of the public-web-to-local bridge.
 
 ## Included
 

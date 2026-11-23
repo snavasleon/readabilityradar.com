@@ -1,9 +1,9 @@
 import englishSyllables from '../../resources/cmudict-syllables.json';
 import spanishSyllables from '../../resources/pylabeador-syllables.json';
+import { MAX_HTML_CHARS } from '../../public/core/readability-core.mjs';
 
 // The public edition deliberately keeps computation in the visitor's browser.
 // This Worker only serves assets and fetches public HTML through a guarded proxy.
-const MAX_HTML_CHARS = 2_000_000;
 const FETCH_TIMEOUT_MS = 12_000;
 const MAX_REDIRECTS = 4;
 
@@ -16,6 +16,10 @@ export default {
     }
     if (url.hostname === 'www.readabilityradar.com') {
       return Response.redirect(`https://readabilityradar.com${url.pathname}${url.search}`, 301);
+    }
+    if ((url.pathname === '/demo/es' || url.pathname === '/demo/en') && request.method === 'GET') {
+      const assetUrl = new URL(`${url.pathname}.html`, request.url);
+      return env.ASSETS.fetch(new Request(assetUrl, request));
     }
     if (url.pathname === '/api/dictionary' && request.method === 'GET') {
       const language = url.searchParams.get('language') === 'en' ? 'en' : 'es';
@@ -66,7 +70,7 @@ async function fetchPublicHtml(value) {
         method: 'GET', redirect: 'manual', signal: controller.signal,
         headers: {
           accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1',
-          'user-agent': 'WebReadabilityRadar/1.0 (+privacy-preserving client analysis)',
+          'user-agent': 'WebReadabilityRadar/1.1.0 (+privacy-preserving client analysis)',
         },
       });
       if ([301, 302, 303, 307, 308].includes(response.status)) {

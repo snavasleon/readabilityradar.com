@@ -1,14 +1,30 @@
 import fs from 'node:fs/promises';
-import vm from 'node:vm';
-import {createHash} from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
+import { createReadabilityCore, processingFingerprintMaterial } from '../../public/core/readability-core.mjs';
+
+const sha256 = value => createHash('sha256').update(value).digest('hex');
+
+// Validation must exercise the same browser-safe processor used by both
+// editions, rather than evaluating a copied slice of server.mjs in a VM.
 export async function loadCore() {
-  const source = await fs.readFile(new URL('../../server.mjs', import.meta.url), 'utf8');
-  const context = vm.createContext({createHash, URL, LIMITS: {maxHtmlChars: 1800000}});
-  const starts = [...source.matchAll(/^(?:async )?function \w+\(/gm)];
-  for (let i=0; i<starts.length; i++) {
-    if (starts[i][0].startsWith('async ')) continue;
-    const end = starts[i+1]?.index ?? source.length;
-    vm.runInContext(source.slice(starts[i].index, end), context);
-  }
-  return {core: context, sha256: createHash('sha256').update(source).digest('hex')};
+  const [serverSource, coreSource, englishSource, spanishSource] = await Promise.all([
+    fs.readFile(new URL('../../server.mjs', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../../public/core/readability-core.mjs', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../../resources/cmudict-syllables.json', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../../resources/pylabeador-syllables.json', import.meta.url), 'utf8'),
+  ]);
+  const englishSyllableDictionary = JSON.parse(englishSource).entries;
+  const spanishSyllableDictionary = JSON.parse(spanishSource).entries;
+  return {
+    core: createReadabilityCore({ englishSyllableDictionary, spanishSyllableDictionary, crypto: webcrypto }),
+    // Retained for existing validation artefacts; coreSha256 is the actual
+    // source-code fingerprint. Evidence additionally records the language
+    // dictionary used in the score calculation.
+    sha256: sha256(serverSource),
+    coreSha256: sha256(coreSource),
+    processingSha256: {
+      en: sha256(processingFingerprintMaterial(coreSource, englishSyllableDictionary)),
+      es: sha256(processingFingerprintMaterial(coreSource, spanishSyllableDictionary)),
+    },
+  };
 }

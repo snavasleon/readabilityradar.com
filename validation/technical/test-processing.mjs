@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {loadCore} from './load-core.mjs';
-const {core,sha256}=await loadCore();
+const {core,sha256,coreSha256,processingSha256}=await loadCore();
 const cases=[
  ['period','La casa. La sala.',2,4,6],
  ['semicolon','La casa; la sala.',2,4,6],
@@ -32,10 +32,10 @@ const longParagraph=`Primera frase. ${'Palabra '.repeat(120)}Última frase.`.rep
 const paragraphs=core.extractTextBlocks(`<article><p>${longParagraph}</p><p>Párrafo independiente.</p></article>`);
 assert.equal(JSON.stringify(paragraphs),JSON.stringify([longParagraph,'Párrafo independiente.']));
 assert.equal(JSON.stringify(core.extractTextBlocks('<main><p>Aviso repetido.</p><p>Aviso repetido.</p></main>')),JSON.stringify(['Aviso repetido.','Aviso repetido.']));
-assert.equal(JSON.stringify(core.extractTextBlocks('<header><p>Menú.</p></header><main><p>Contenido.</p></main><footer><p>Pie.</p></footer>')),JSON.stringify(['Contenido.']));
+assert.equal(JSON.stringify(core.extractTextBlocks('<header><p>Menú.</p></header><main><p>Contenido.</p></main><footer><p>Pie.</p></footer>')),JSON.stringify(['Menú.','Contenido.']));
 assert.equal(JSON.stringify(core.extractTextBlocks('<main><div>Texto sin párrafo semántico.</div></main>')),JSON.stringify([]));
-assert.equal(core.assertSupportedHtmlSize('a'.repeat(1800000)).length,1800000);
-assert.throws(()=>core.assertSupportedHtmlSize('a'.repeat(1800001)),/PAGE_HTML_TOO_LARGE/);
+assert.equal(core.assertSupportedHtmlSize('a'.repeat(6000000)).length,6000000);
+assert.throws(()=>core.assertSupportedHtmlSize('a'.repeat(6000001)),/PAGE_HTML_TOO_LARGE/);
 const pool=Array.from({length:40},(_,i)=>({text:`Fragment ${i}`,score:i,fragmentId:String(i)}));
 const sample=core.sampleFragments(pool,10,'seed');
 assert.equal(sample.length,10);assert.equal(new Set(sample.map(f=>f.text)).size,10);
@@ -45,5 +45,5 @@ assert.equal(core.sampleFragments([...pool.slice(0,3),{...pool[0],fragmentId:'sa
 const coverage=new Set();for(let i=0;i<100;i++)core.sampleFragments(pool,10,String(i)).forEach(f=>coverage.add(f.fragmentId));assert.equal(coverage.size,40);
 const headers=Object.keys(results[0]);const csv=[headers,...results.map(r=>headers.map(h=>r[h]))].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
 await fs.writeFile(new URL('processing-tests.csv',import.meta.url),'\uFEFF'+csv);
-await fs.writeFile(new URL('test-summary.json',import.meta.url),JSON.stringify({server_sha256:sha256,processing_cases:results.length,classification_boundaries:9,paragraph_integrity:'passed: complete semantic paragraphs only; no sentence-based split or container fallback; repeated paragraphs preserved',content_boundaries:'passed: navigation/header/footer excluded consistently; pages above the technical limit fail rather than truncate',random_sampling:'passed: seed, score/order invariance, uniqueness, small pool, coverage',external_inflesz:'pending'},null,2));
+await fs.writeFile(new URL('test-summary.json',import.meta.url),JSON.stringify({server_sha256:sha256,core_sha256:coreSha256,processing_sha256:processingSha256.es,processing_cases:results.length,classification_boundaries:9,paragraph_integrity:'passed: complete semantic paragraphs only; no sentence-based split or container fallback; repeated paragraphs preserved',content_boundaries:'passed: navigation and footer excluded; a header paragraph is retained because it can contain page-hero prose; pages above the 6,000,000-character technical limit fail rather than truncate',random_sampling:'passed: seed, score/order invariance, uniqueness, small pool, coverage',external_inflesz:'pending'},null,2));
 console.log(`PASS: ${results.length} documented/convention cases; 9 category boundaries; full semantic paragraphs; non-truncation boundary; unbiased-by-score sampling invariants.`);

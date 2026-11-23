@@ -22,6 +22,8 @@ npx wrangler login
 npm run deploy
 ```
 
-The login command opens Cloudflare's authorization page. `npm run deploy`
-prints the public `*.workers.dev` address. A custom domain is optional and is
-not required for the free edition.
+The login command opens Cloudflare's authorization page. Production is served
+at `https://readabilityradar.com`; the Worker redirects
+`www.readabilityradar.com` to that canonical address. Wrangler may also print
+a `*.workers.dev` address during deployment, but it is not the public product
+URL.

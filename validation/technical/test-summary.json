@@ -1,9 +1,11 @@
 {
-  "server_sha256": "b5bbf4a637211c7d7fa2bd5c43161565e865223aa3b913e2c153ca7e39407dfa",
+  "server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+  "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
+  "processing_sha256": "ee3ded23ee1f87418fc6192eaaa5ecabc07197c4e01b3c8f48df8e40683e03e7",
   "processing_cases": 18,
   "classification_boundaries": 9,
   "paragraph_integrity": "passed: complete semantic paragraphs only; no sentence-based split or container fallback; repeated paragraphs preserved",
-  "content_boundaries": "passed: navigation/header/footer excluded consistently; pages above the technical limit fail rather than truncate",
+  "content_boundaries": "passed: navigation and footer excluded; a header paragraph is retained because it can contain page-hero prose; pages above the 6,000,000-character technical limit fail rather than truncate",
   "random_sampling": "passed: seed, score/order invariance, uniqueness, small pool, coverage",
   "external_inflesz": "pending"
 }

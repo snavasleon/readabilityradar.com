@@ -1,17 +1,7 @@
 import fs from 'node:fs/promises';
-import vm from 'node:vm';
-import crypto from 'node:crypto';
+import { loadCore } from '../../../technical/load-core.mjs';
 const base=new URL('.',import.meta.url);
-const source=await fs.readFile(new URL('../../../../server.mjs',base),'utf8');
-const ctx=vm.createContext({});
-const dictionary=JSON.parse(await fs.readFile(new URL('../../../../resources/cmudict-syllables.json',base),'utf8'));
-ctx.ENGLISH_SYLLABLE_DICTIONARY=dictionary.entries;
-ctx.ENGLISH_SYLLABLE_CACHE=new Map();
-for(const name of ['countSyllables','countEnglishSyllables','englishSyllableSource','normalizeEnglishToken','englishDictionaryCounts','resolveEnglishSyllables','acronymLetterSyllables','heuristicEnglishSyllables','countSpanishSyllables']){
- const start=source.indexOf(`function ${name}(`),end=source.indexOf('\nfunction ',start+1);
- if(start<0)throw new Error(`Missing function: ${name}`);
- vm.runInContext(source.slice(start,end<0?undefined:end),ctx);
-}
+const { core: ctx, sha256: serverSha256, coreSha256, processingSha256 } = await loadCore();
 const input=JSON.parse((await fs.readFile(new URL('reference-counts.json',base),'utf8')).replace(/^\uFEFF/,''));
 const rows=input.map(r=>{const reference=Number(r.reference);return {word:r.word,frequency:Number(r.frequency),current_count:ctx.countSyllables(r.word,r.language),reference_count:r.reference===''||!Number.isFinite(reference)||reference<1?null:reference,method:ctx.englishSyllableSource(r.word)};});
 const language=input[0].language;
@@ -32,7 +22,7 @@ const summary={language,version:'current_radar',total_word_types:rows.length,com
  dictionary_coverage:rows.filter(r=>r.method.startsWith('cmudict')).length/rows.length,
  heuristic_word_types:rows.filter(r=>!r.method.startsWith('cmudict')).length,
  reference_source:language==='es'?'pylabeador 0.9.0 reference syllable counts':'CMU Pronouncing Dictionary, first listed pronunciation',
- generated_at:new Date().toISOString(),current_server_sha256:crypto.createHash('sha256').update(source).digest('hex')};
+ generated_at:new Date().toISOString(),server_sha256:serverSha256,core_sha256:coreSha256,processing_sha256:processingSha256.en};
 async function csv(name,headers,values){await fs.writeFile(new URL(name,base),'\uFEFF'+[headers,...values].map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n'));}
 await csv('word-comparison.csv',['word','frequency','current_count','reference_count','difference','exact_agreement','method'],rows.map(r=>[r.word,r.frequency,r.current_count,r.reference_count,r.reference_count===null?'':r.current_count-r.reference_count,r.reference_count===null?'':r.current_count===r.reference_count,r.method]));
 await csv('agreement-summary.csv',Object.keys(summary),[Object.values(summary)]);

@@ -14,8 +14,8 @@ inspect and reproduce the project.
 
 ## Local use
 
-Use `launch-windows.bat` on Windows.
-The portable Node runtime is deliberately excluded from the public repository;
+For the packaged local edition, download the Windows application from the
+latest GitHub release. For source use, run `launch-windows.bat` on Windows and
 install Node.js 18 or later when it is not already available.
 
 ## Cloudflare use

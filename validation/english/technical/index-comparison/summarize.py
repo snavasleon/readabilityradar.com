@@ -71,15 +71,19 @@ for s in summaries:
 meta=word['metadata']
 snapshot=dict(language='en',reference_software=meta['software'],reference_version=meta['version'],reference_build=meta['build'],
     proofing_language=meta['proofing_language'],language_id=meta['language_id'],metric='Flesch Reading Ease',
-    generated_at=datetime.now(timezone.utc).isoformat(),radar_server_sha256=radar['server_sha256'],
+    generated_at=datetime.now(timezone.utc).isoformat(),radar_server_sha256=radar['server_sha256'],core_sha256=radar['core_sha256'],processing_sha256=radar['processing_sha256'],
     corpus_sha256=hashlib.sha256(json.dumps([{'text_id':r['text_id'],'text':r['text']} for r in records],ensure_ascii=False,separators=(',',':')).encode()).hexdigest(),
     groups=summaries)
 def write_csv(name,rows):
     with (out/name).open('w',encoding='utf-8-sig',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(rows[0]),quoting=csv.QUOTE_ALL);writer.writeheader();writer.writerows(rows)
 write_csv('index-comparison.csv',records)
-write_csv('agreement-summary.csv',[dict(**s,reference_software=meta['software'],reference_version=meta['version'],reference_build=meta['build'],proofing_language=meta['proofing_language'],generated_at=snapshot['generated_at'],radar_server_sha256=radar['server_sha256'],corpus_sha256=snapshot['corpus_sha256']) for s in summaries])
+write_csv('agreement-summary.csv',[dict(**s,reference_software=meta['software'],reference_version=meta['version'],reference_build=meta['build'],proofing_language=meta['proofing_language'],generated_at=snapshot['generated_at'],radar_server_sha256=radar['server_sha256'],core_sha256=radar['core_sha256'],processing_sha256=radar['processing_sha256'],corpus_sha256=snapshot['corpus_sha256']) for s in summaries])
 snapshot_path = root.parents[3]/'public/index-validation.json' if installed else out/'index-validation.json'
+if snapshot_path.exists():
+    previous = json.loads(snapshot_path.read_text(encoding='utf-8'))
+    if 'spanish' in previous:
+        snapshot['spanish'] = previous['spanish']
 snapshot_path.write_text(json.dumps(snapshot,indent=2)+'\n',encoding='utf-8')
 definitions={
  'difference_standard_deviation':'Sample standard deviation of original Radar minus Word paired differences, in points.',
@@ -120,7 +124,7 @@ definitions={
  'reference_software':'External comparator used: installed Microsoft Word desktop application.',
  'reference_version':'Word application version reported by automation.', 'reference_build':'Word application build reported by automation.',
  'proofing_language':'Document proofing language explicitly set to English (United States), language ID 1033.',
- 'generated_at':'UTC time the paired summary was generated.', 'radar_server_sha256':'SHA-256 of the Radar server source used to calculate scores.',
+ 'generated_at':'UTC time the paired summary was generated.', 'radar_server_sha256':'SHA-256 of the Radar server source used to calculate scores.', 'core_sha256':'SHA-256 of the shared browser-safe processing core used to calculate scores.', 'processing_sha256':'SHA-256 of the shared core plus the exact English syllable dictionary used to calculate scores.',
  'corpus_sha256':'SHA-256 of canonical UTF-8 JSON containing ordered text_id/text objects (compact separators).'
 }
 definitions['comparison_scale']='Primary comparison uses original Radar scores, including negatives, versus Word scores. Bounded metrics are supplementary because Word reports within 0..100.'
@@ -129,7 +133,7 @@ for field in ('mean_radar_score','mean_signed_difference','mean_absolute_differe
 (out/'column-definitions.json').write_text(json.dumps(definitions,indent=2)+'\n',encoding='utf-8')
 for name,rows in [('index-comparison',records),('agreement-summary',summaries)]:
     columns=list(rows[0])
-    if name=='agreement-summary': columns=list(summaries[0])+['reference_software','reference_version','reference_build','proofing_language','generated_at','radar_server_sha256','corpus_sha256']
+    if name=='agreement-summary': columns=list(summaries[0])+['reference_software','reference_version','reference_build','proofing_language','generated_at','radar_server_sha256','core_sha256','processing_sha256','corpus_sha256']
     assert all(c in definitions for c in columns)
     text=f'# {name}.csv\n\nUTF-8 with BOM; comma-separated, quoted fields; CRLF lines; dot decimals. Blank means unavailable, not zero. CSV does not store fonts or widths.\n\n| Column | Meaning |\n| --- | --- |\n'+ '\n'.join(f'| {c} | {definitions[c]} |' for c in columns)
     if not installed:

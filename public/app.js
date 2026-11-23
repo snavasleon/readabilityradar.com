@@ -1,10 +1,11 @@
 import { analyzeOnline } from './online-analyzer.js';
+import { processingFingerprintMaterial } from './core/readability-core.mjs';
 
 const STRINGS = {
   es: {
     brandSubtitle: 'Lecturabilidad y accesibilidad cognitiva',
     title: 'Web Readability Radar',
-    lede: 'Explora dominios o páginas concretas en español, explica qué URLs entran en la muestra y localiza fragmentos que necesitan atención.',
+    lede: 'Explora dominios o páginas concretas en español, explica qué URLs se analizan y localiza fragmentos que necesitan atención.',
     whatAnalyze: 'Qué quieres analizar',
     whatAnalyzeHelp: 'Elige un dominio, una página web concreta o un archivo HTML guardado en tu equipo.',
     domainMode: 'Dominio',
@@ -12,10 +13,12 @@ const STRINGS = {
     domainInitial: 'Dominio inicial',
     exactPage: 'URL exacta',
     mainInputHelp: 'Escribe una dirección web. Dominio busca páginas mediante el mapa del sitio y enlaces internos; Una página revisa solo la URL indicada.',
-    domainHint: 'Puedes escribir hasta tres dominios, uno por línea.',
-    pageHint: 'Solo se analizarán las páginas escritas aquí; no se rastrea el dominio.',
+    domainHint: 'Puedes escribir uno o varios dominios, uno por línea.',
+    pageHint: 'Se analizará la única URL escrita aquí; no se rastrea el resto del dominio.',
+    pageHintLocal: 'Se analizarán las URL escritas aquí; no se rastrea el resto de sus dominios.',
+    onlineSinglePageOnly: 'La edición web analiza una sola URL cada vez. Para varias URLs o un dominio completo, abre la aplicación local.',
     mandatoryPages: 'Páginas obligatorias',
-    mandatoryHelp: 'Estas URLs se incluyen siempre dentro de la muestra si pertenecen al dominio analizado.',
+    mandatoryHelp: 'Estas URLs se incluyen siempre en el análisis si pertenecen al dominio analizado.',
     mandatoryHint: 'Opcional: se incluirán siempre dentro del análisis del dominio.',
     includeSubdomains: 'Incluir subdominios relacionados',
     includeSubdomainsHelp: 'Está desactivado por defecto. Solo incorpora hosts HTTPS o HTTP cuyo nombre termina en el mismo dominio registrable, por ejemplo investigacion.ejemplo.es desde ejemplo.es. No incorpora dominios externos ni demuestra que los subdominios compartan una misma función institucional.',
@@ -31,10 +34,6 @@ const STRINGS = {
     emptyHtml: 'El archivo está vacío. Selecciona un HTML con contenido.',
     invalidUrl: 'Introduce una dirección web válida, por ejemplo https://www.example.com. Para un archivo guardado en tu equipo, elige HTML local.',
     connectionError: 'No se pudo conectar con la aplicación local. Comprueba que su ventana de arranque siga abierta y vuelve a intentarlo.',
-    intensity: 'Intensidad del análisis',
-    intensityHelp: 'Rápido explora una muestra aleatoria y representativa de páginas por sección y muestra, dentro de esa muestra, hasta 10 párrafos con mayor dificultad. Completo analiza todas las URLs elegibles detectables mediante enlaces internos y sitemaps, hasta el máximo técnico publicado.',
-    fast: 'Rápido',
-    complete: 'Completo',
     samplingSettings: 'Ajustes de extracción',
     settingsHelp: 'Estos dos ajustes opcionales determinan qué textos entran en el análisis. Puedes dejarlos como están.',
     sampleSize: 'Alcance',
@@ -104,7 +103,7 @@ const STRINGS = {
     briefReportSummary: 'Resumen de resultados y criterios aplicados.',
     fullReportSummary: 'Resultados completos, páginas, fragmentos y referencias.',
     fragmentsTitle: 'Fragmentos detectados',
-    fragmentsSubtitle: 'Cada fragmento conserva un párrafo completo. Rápido muestra los más difíciles de la muestra de páginas; Completo muestra todos. Ordenados por dificultad.',
+    fragmentsSubtitle: 'Cada fragmento conserva un párrafo completo. Se muestran todos los fragmentos elegibles, ordenados por dificultad.',
     sortFragments: 'Ordenar',
     sortPages: 'Ordenar',
     sortHardest: 'Más difíciles primero',
@@ -139,7 +138,7 @@ const STRINGS = {
     loadingStepPage: 'Abrir página',
     loadingStepText: 'Extraer texto',
     loadingDetailSourceEstimate: 'Comprobando la fuente elegida antes de analizarla.',
-    loadingNoteComplete: 'El modo completo procesa todas las URLs seleccionadas. Puede tardar varios minutos en dominios grandes; cada página inaccesible tiene un límite propio para que el proceso continúe.',
+    loadingNoteComplete: 'El análisis de dominio procesa todas las URLs seleccionadas. Puede tardar varios minutos en dominios grandes; cada página inaccesible tiene un límite propio para que el proceso continúe.',
     error: 'No se pudo completar el análisis.',
     pageFilename: 'paginas_lecturabilidad.csv',
     fragmentFilename: 'fragmentos_lecturabilidad.csv',
@@ -150,7 +149,7 @@ const STRINGS = {
   en: {
     brandSubtitle: 'Readability and cognitive accessibility',
     title: 'Web Readability Radar',
-    lede: 'Analyze domains or specific pages in English, explain which URLs enter the sample, and locate fragments that need attention.',
+    lede: 'Analyze domains or specific pages in English, explain which URLs are analyzed, and locate fragments that need attention.',
     whatAnalyze: 'What do you want to analyze',
     whatAnalyzeHelp: 'Choose a domain, one web page, or an HTML file saved on your computer.',
     domainMode: 'Domain',
@@ -158,10 +157,12 @@ const STRINGS = {
     domainInitial: 'Initial domain',
     exactPage: 'Exact URL',
     mainInputHelp: 'Enter a web address. Domain finds pages through the sitemap and internal links; One page reviews only the entered URL.',
-    domainHint: 'You can enter up to three domains, one per line.',
-    pageHint: 'Only the URLs entered here will be analyzed; the domain will not be crawled.',
+    domainHint: 'You can enter one or more domains, one per line.',
+    pageHint: 'The single URL entered here will be analyzed; the rest of the domain will not be crawled.',
+    pageHintLocal: 'The URLs entered here will be analyzed; their domains will not be crawled.',
+    onlineSinglePageOnly: 'The web edition analyzes one URL at a time. For several URLs or a complete domain, open the local application.',
     mandatoryPages: 'Required pages',
-    mandatoryHelp: 'These URLs are always included in the sample if they belong to the analyzed domain.',
+    mandatoryHelp: 'These URLs are always included in the analysis if they belong to the analyzed domain.',
     mandatoryHint: 'Optional: these pages will always be included in the domain analysis.',
     includeSubdomains: 'Include related subdomains',
     includeSubdomainsHelp: 'Off by default. It only includes HTTP or HTTPS hosts ending in the same registrable domain, for example research.example.org from example.org. It never includes external domains and does not prove that subdomains serve the same institutional function.',
@@ -177,10 +178,6 @@ const STRINGS = {
     emptyHtml: 'The file is empty. Select an HTML file with content.',
     invalidUrl: 'Enter a valid web address, for example https://www.example.com. To analyze a saved file, choose Local HTML.',
     connectionError: 'The local application could not be reached. Check that its launcher window is still open, then try again.',
-    intensity: 'Analysis intensity',
-    intensityHelp: 'Fast explores a random, representative page sample by section and shows up to 10 hardest paragraphs within that sample. Complete analyzes all eligible URLs detectable through internal links and sitemaps, up to the published technical maximum.',
-    fast: 'Fast',
-    complete: 'Complete',
     samplingSettings: 'Extraction settings',
     settingsHelp: 'These optional settings determine which texts enter the analysis. You can leave them unchanged.',
     sampleSize: 'Scope',
@@ -250,7 +247,7 @@ const STRINGS = {
     briefReportSummary: 'Results summary and applied criteria.',
     fullReportSummary: 'Complete results, pages, fragments and references.',
     fragmentsTitle: 'Detected fragments',
-    fragmentsSubtitle: 'Each fragment preserves one complete paragraph. Fast shows the hardest fragments from the sampled pages; Complete shows all. Sorted by difficulty.',
+    fragmentsSubtitle: 'Each fragment preserves one complete paragraph. All eligible fragments are shown, sorted by difficulty.',
     sortFragments: 'Sort',
     sortPages: 'Sort',
     sortHardest: 'Hardest first',
@@ -285,7 +282,7 @@ const STRINGS = {
     loadingStepPage: 'Open page',
     loadingStepText: 'Extract text',
     loadingDetailSourceEstimate: 'Checking the selected source before analysis.',
-    loadingNoteComplete: 'Complete mode processes every selected URL. Large domains can take several minutes; each inaccessible page has its own limit so processing can continue.',
+    loadingNoteComplete: 'Complete-domain analysis processes every selected URL. Large domains can take several minutes; each inaccessible page has its own limit so processing can continue.',
     error: 'The analysis could not be completed.',
     pageFilename: 'readability_pages.csv',
     fragmentFilename: 'readability_fragments.csv',
@@ -305,6 +302,8 @@ let analysisLanguage = language;
 const cloudflareFreeEdition = !/^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
 const TURNSTILE_SITE_KEY = '0x4AAAAAAGFHr7he3XXoXQGL';
 let turnstileWidgetId = null;
+let turnstileLoader = null;
+const processingFingerprintLoaders = new Map();
 
 async function getTurnstileToken() {
   if (!cloudflareFreeEdition || executionMode === 'local') return '';
@@ -341,18 +340,54 @@ async function getTurnstileToken() {
 
 function waitForTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
-  return new Promise((resolve, reject) => {
-    const started = Date.now();
-    const timer = window.setInterval(() => {
-      if (window.turnstile) {
-        window.clearInterval(timer);
-        resolve(window.turnstile);
-      } else if (Date.now() - started > 10_000) {
-        window.clearInterval(timer);
-        reject(new Error(language === 'es' ? 'No se pudo cargar la comprobación de seguridad. Comprueba tu conexión e inténtalo de nuevo.' : 'Security verification could not load. Check your connection and try again.'));
-      }
-    }, 100);
-  });
+  if (!cloudflareFreeEdition) {
+    return Promise.reject(new Error(language === 'es'
+      ? 'La comprobación de seguridad solo se carga para la edición en línea.'
+      : 'Security verification is only loaded for the online edition.'));
+  }
+  if (!turnstileLoader) {
+    turnstileLoader = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (window.turnstile) resolve(window.turnstile);
+        else reject(new Error(language === 'es'
+          ? 'No se pudo cargar la comprobación de seguridad. Comprueba tu conexión e inténtalo de nuevo.'
+          : 'Security verification could not load. Check your connection and try again.'));
+      };
+      script.onerror = () => reject(new Error(language === 'es'
+        ? 'No se pudo cargar la comprobación de seguridad. Comprueba tu conexión e inténtalo de nuevo.'
+        : 'Security verification could not load. Check your connection and try again.'));
+      document.head.append(script);
+    }).catch((error) => {
+      // A temporary network failure should not poison the next user attempt.
+      turnstileLoader = null;
+      throw error;
+    });
+  }
+  return turnstileLoader;
+}
+
+async function currentProcessingFingerprint(requestedLanguage) {
+  if (!window.crypto?.subtle) return null;
+  const languageKey = requestedLanguage === 'en' ? 'en' : 'es';
+  if (!processingFingerprintLoaders.has(languageKey)) {
+    processingFingerprintLoaders.set(languageKey, (async () => {
+      const [coreResponse, dictionaryResponse] = await Promise.all([
+        fetch(new URL('./core/readability-core.mjs', import.meta.url), { cache: 'no-store' }),
+        fetch(`/api/dictionary?language=${languageKey}`, { cache: 'no-store' }),
+      ]);
+      if (!coreResponse.ok || !dictionaryResponse.ok) return null;
+      const [coreSource, dictionarySource] = await Promise.all([coreResponse.text(), dictionaryResponse.text()]);
+      const dictionary = JSON.parse(dictionarySource);
+      const material = new TextEncoder().encode(processingFingerprintMaterial(coreSource, dictionary));
+      const digest = await window.crypto.subtle.digest('SHA-256', material);
+      return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    })().catch(() => null));
+  }
+  return processingFingerprintLoaders.get(languageKey);
 }
 const LOCAL_ENGINE_CANDIDATES = ['http://127.0.0.1:8787', 'http://127.0.0.1:55481'];
 const RELEASES_PAGE = 'https://github.com/snavasleon/readabilityradar.com/releases/latest';
@@ -372,7 +407,6 @@ let privacyAccepted = false;
 let analysisLanguageConfirmed = false;
 let executionMode = cloudflareFreeEdition ? 'online' : 'local';
 let searchVisibilityMode = false;
-let quickHomeMode = false;
 let localEngineBase = null;
 let localEngineWatcher = null;
 let localEngineChecking = false;
@@ -380,7 +414,6 @@ let pendingLocalJob = null;
 let scope = 'page';
 let inputSource = 'url';
 let analysisRunning = false;
-let intensity = 'fast';
 let activeTab = 'panel';
 let lastResult = null;
 let localSourceText = '';
@@ -399,7 +432,6 @@ const includeSubdomains = document.querySelector('#includeSubdomains');
 const htmlFile = document.querySelector('#htmlFile');
 const clearHtmlButton = document.querySelector('#clearHtmlButton');
 const scopeButtons = [...document.querySelectorAll('[data-scope]')];
-const intensityButtons = [...document.querySelectorAll('[data-intensity]')];
 const maxPagesInput = document.querySelector('#maxPages');
 const estimateButton = document.querySelector('#estimateButton');
 const privacyDialog = document.querySelector('#privacyDialog');
@@ -476,22 +508,10 @@ scopeButtons.forEach((button) => {
       return;
     }
     searchVisibilityMode = false;
-    quickHomeMode = false;
     inputSource = mode === 'html' ? 'html' : 'url';
     scope = 'page';
-    intensity = 'fast';
-    intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === intensity));
     if (inputSource !== 'html') htmlFile.value = '';
     syncScope();
-    resetResults();
-  });
-});
-
-intensityButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    intensity = button.dataset.intensity;
-    intensityButtons.forEach((item) => item.classList.toggle('active', item === button));
-    syncIntensityField();
     resetResults();
   });
 });
@@ -573,13 +593,16 @@ function syncScope() {
   document.querySelectorAll('.page-only').forEach((item) => item.classList.toggle('hidden', scope !== 'page'));
   document.querySelector('.sample-size-field')?.classList.toggle('hidden', scope === 'page');
   document.querySelector('#mainInputLabel').textContent = scope === 'page' ? dictionary.exactPage : dictionary.domainInitial;
-  document.querySelector('#mainInputHint').textContent = scope === 'page' ? dictionary.pageHint : dictionary.domainHint;
+  const localPageEdition = cloudflareFreeEdition && executionMode === 'local';
+  document.querySelector('#mainInputHint').textContent = scope === 'page'
+    ? (localPageEdition ? dictionary.pageHintLocal : dictionary.pageHint)
+    : dictionary.domainHint;
   // Preparing candidates is meaningful only when a local complete-domain run
   // will analyse several URLs afterwards. For one URL or a local HTML file it
   // produced a legitimate but misleading "0 analysed" report.
   estimateButton.classList.toggle('hidden', inputSource === 'html' || scope === 'page');
   estimateButton.querySelector('span:last-child').textContent = inputSource === 'html' ? dictionary.prepareHtml : scope === 'page' ? dictionary.preparePage : dictionary.estimate;
-  syncIntensityField();
+  syncScopeLimitField();
   renderModeChoices();
 }
 
@@ -628,7 +651,7 @@ function applyLanguage() {
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
   });
-  syncIntensityField();
+  syncScopeLimitField();
   syncScope();
 }
 
@@ -702,12 +725,9 @@ function activateFullDomain(base) {
   localEngineBase = base;
   executionMode = 'local';
   searchVisibilityMode = false;
-  quickHomeMode = false;
   inputSource = 'url';
   scope = 'domain';
-  intensity = 'complete';
   htmlFile.value = '';
-  intensityButtons.forEach((item) => item.classList.toggle('active', item.dataset.intensity === 'complete'));
   finishIntroduction();
 }
 
@@ -724,8 +744,8 @@ async function connectFullDomain() {
 
 async function chooseAvailableEngine() {
   // This follows the participant's simplest path: when the portable application
-  // is already open, use it immediately. The fast/full choice is only needed
-  // when no local engine is available.
+  // is already open, use it immediately. A choice is needed only when no local
+  // engine is available.
   const base = await findLocalEngine();
   if (base) {
     localEngineBase = base;
@@ -802,31 +822,14 @@ function fetchLocalEngine(url, { timeoutMs, ...options } = {}) {
   return fetch(url, { ...options, targetAddressSpace: 'loopback', ...(signal ? { signal } : {}) });
 }
 
-function completeSampleLabel() {
+function completeDomainLabel() {
   return language === 'es' ? 'Todas las elegibles' : 'All eligible';
 }
 
-function syncIntensityField() {
-  if (cloudflareFreeEdition && executionMode !== 'local') {
-    maxPagesInput.value = '1';
-    maxPagesInput.disabled = true;
-    return;
-  }
-  if (intensity === 'complete') {
-    maxPagesInput.type = 'text';
-    maxPagesInput.value = completeSampleLabel();
-    maxPagesInput.disabled = true;
-    return;
-  }
-  if (intensity === 'fast') {
-    maxPagesInput.type = 'number';
-    if (!/^\d+$/.test(maxPagesInput.value)) maxPagesInput.value = '12';
-    maxPagesInput.disabled = analysisRunning || scope === 'page';
-    return;
-  }
-  maxPagesInput.type = 'number';
-  maxPagesInput.disabled = false;
-  if (!/^\d+$/.test(maxPagesInput.value)) maxPagesInput.value = '12';
+function syncScopeLimitField() {
+  maxPagesInput.type = 'text';
+  maxPagesInput.value = scope === 'page' ? 'all' : completeDomainLabel();
+  maxPagesInput.disabled = true;
 }
 
 async function runAnalysis(estimateOnly) {
@@ -855,7 +858,7 @@ async function runAnalysis(estimateOnly) {
           <span>${escapeHtml(scope === 'domain' ? dictionary.loadingStepPages : dictionary.loadingStepText)}</span>
           <span>${escapeHtml(dictionary.loadingStepMetrics)}</span>
         </div>
-        ${intensity === 'complete' && scope === 'domain' ? `<p class="loading-note">${escapeHtml(dictionary.loadingNoteComplete)}</p>` : ''}
+        ${scope === 'domain' ? `<p class="loading-note">${escapeHtml(dictionary.loadingNoteComplete)}</p>` : ''}
         <p class="loading-elapsed" aria-live="off">${escapeHtml(language === 'es' ? 'Tiempo transcurrido: 0:00' : 'Elapsed time: 0:00')}</p>
         <p class="loading-progress" aria-live="polite">${escapeHtml(language === 'es' ? 'Preparando análisis…' : 'Preparing analysis…')}</p>
       </div>
@@ -872,7 +875,7 @@ async function runAnalysis(estimateOnly) {
   try {
     const usingLocalEngine = cloudflareFreeEdition && executionMode === 'local' && Boolean(localEngineBase);
     if (cloudflareFreeEdition && executionMode === 'local' && !usingLocalEngine) {
-      throw new Error(language === 'es' ? 'El motor completo local no está conectado. Elige el modo rápido o abre la versión local.' : 'The full local engine is not connected. Choose quick mode or open the local edition.');
+      throw new Error(language === 'es' ? 'La aplicación local no está conectada. Ábrela y vuelve a intentarlo, o elige Una página web o Archivo HTML.' : 'The local application is not connected. Open it and try again, or choose One web page or HTML file.');
     }
     const localHtml = await readLocalHtml();
     localSourceText = '';
@@ -884,12 +887,11 @@ async function runAnalysis(estimateOnly) {
       exactUrls: scope === 'domain' ? exactUrls.value : '',
       includeRelatedSubdomains: scope === 'domain' && includeSubdomains.checked,
       estimateOnly,
-      maxPages: scope === 'page' ? '1' : (intensity === 'complete' ? 'all' : maxPagesInput.value),
-      samplingMode: intensity === 'fast' && scope === 'domain' ? 'random' : 'all',
-      // A page or a local HTML file is already the complete unit selected by
-      // the visitor. Show every eligible fragment; the top-10 limit belongs
-      // only to a fast, multi-page domain sample.
-      fragmentLimit: intensity === 'fast' && scope === 'domain' ? 'top10' : null,
+      // A page, local HTML file, or complete local domain always processes its
+      // selected content in full. There is no hidden quick-sample limit.
+      maxPages: 'all',
+      samplingMode: 'all',
+      fragmentLimit: null,
       minWords: document.querySelector('#minWords').value,
       minFragmentWords: document.querySelector('#minFragmentWords').value,
       htmlInput: localHtml?.content ?? '',
@@ -935,18 +937,29 @@ async function runAnalysis(estimateOnly) {
         return null;
       }
     };
-    const [indexValidation, syllableValidation] = await Promise.all([
+    const [indexValidation, syllableValidation, processingFingerprint] = await Promise.all([
       loadValidationJson('index-validation.json'),
       loadValidationJson('syllable-validation.json'),
+      currentProcessingFingerprint(payload.language),
     ]);
-    if (indexValidation) lastResult.indexValidation = indexValidation;
+    if (indexValidation) {
+      const snapshot = payload.language === 'en' ? indexValidation : indexValidation.spanish;
+      lastResult.indexValidation = {
+        ...indexValidation,
+        matchesCurrentProcessing: Boolean(processingFingerprint && snapshot?.processing_sha256 === processingFingerprint),
+      };
+    }
+    const localSyllableEvidence = lastResult.syllableValidation;
     const syllableSnapshot = syllableValidation?.[payload.language];
     if (syllableSnapshot) {
       lastResult.syllableValidation = {
         data: syllableSnapshot,
-        // The snapshot is deployed beside this client. Its fingerprint remains
-        // visible in the full report so a future change can be checked again.
-        matchesCurrentServer: true,
+        // A result file deployed beside the app is not evidence by itself. It
+        // counts only when code and the dictionary used by this language match.
+        matchesCurrentProcessing: Boolean(processingFingerprint && syllableSnapshot.processing_sha256 === processingFingerprint),
+        // Only the local server can verify the complete server-source hash.
+        // Web reports use the shared calculation fingerprint instead.
+        matchesCurrentServer: localSyllableEvidence?.matchesCurrentServer ?? null,
       };
     }
     activeTab = 'panel';
@@ -1066,19 +1079,22 @@ async function readLocalHtml() {
 function validateWebInput(value) {
   const lines = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   if (!lines.length) throw new Error(STRINGS[language].invalidUrl);
+  if (scope === 'page' && cloudflareFreeEdition && executionMode !== 'local' && lines.length !== 1) {
+    throw new Error(STRINGS[language].onlineSinglePageOnly);
+  }
   for (const line of lines) {
     try {
       const url = new URL(/^[a-z][a-z\d+.-]*:\/\//i.test(line) ? line : `https://${line}`);
       if (!['http:', 'https:'].includes(url.protocol) || !url.hostname) throw new Error();
     } catch { throw new Error(STRINGS[language].invalidUrl); }
   }
-  return value;
+  return lines.join('\n');
 }
 
 function setBusy(isBusy) {
   analysisRunning = isBusy;
   form.querySelectorAll('button, textarea, input').forEach((node) => {
-    if (node === maxPagesInput && intensity === 'complete') {
+    if (node === maxPagesInput) {
       node.disabled = true;
       return;
     }
@@ -1086,7 +1102,7 @@ function setBusy(isBusy) {
   });
   document.body.classList.toggle('is-busy', isBusy);
   if (!isBusy) {
-    syncIntensityField();
+    syncScopeLimitField();
     syncScope();
   }
 }
@@ -1128,20 +1144,17 @@ function renderPanel(dictionary) {
   const result = lastResult;
   const counts = trafficCounts(result);
   const isEstimate = Boolean(result.estimateOnly);
-  const isHardestFragmentSelection = result.criteria?.fragmentSelection === 'hardest_from_selected_pages';
   const coverage = result.criteria?.coverage;
   const languageExclusions = result.summary.languageExcludedPages ?? 0;
   const trafficHelp = result.language === 'es'
-    ? (language === 'es' ? 'Cuenta todos los fragmentos detectados, también los que no se muestran en el modo rápido. Las cinco categorías conservan las bandas de dificultad de INFLESZ. La categoría se obtiene del índice antes de redondear.' : 'Counts all detected fragments, including those not displayed in Fast mode. The five colors represent INFLESZ difficulty bands calculated from the unrounded score.')
-    : (language === 'es' ? 'Cuenta todos los fragmentos detectados, también los que no se muestran en el modo rápido. Los colores agrupan las categorías de Flesch calculadas antes de redondear.' : 'Counts all detected fragments, including those not displayed in Fast mode. Colors group Flesch categories calculated from the unrounded score.');
+    ? (language === 'es' ? 'Cuenta todos los fragmentos detectados. Las cinco categorías conservan las bandas de dificultad de INFLESZ. La categoría se obtiene del índice antes de redondear.' : 'Counts every detected fragment. The five colors retain the INFLESZ difficulty bands. The category is assigned before rounding the score.')
+    : (language === 'es' ? 'Cuenta todos los fragmentos detectados. Los colores agrupan las categorías de Flesch calculadas antes de redondear.' : 'Counts every detected fragment. Colors group Flesch categories calculated before rounding.');
   const analyzedDetail = language === 'es'
     ? `${dictionary.withMetrics}; ${languageExclusions} excluidas por idioma`
     : `${dictionary.withMetrics}; ${languageExclusions} excluded by language`;
   const fragmentDetail = isEstimate
     ? dictionary.estimatePending
-    : isHardestFragmentSelection
-      ? dictionary.selectedForReview
-      : result.criteria?.analysisTimeLimitReached
+    : result.criteria?.analysisTimeLimitReached
         ? (language === 'es' ? `En ${result.summary.analyzed} de ${result.summary.selected} páginas` : `From ${result.summary.analyzed} of ${result.summary.selected} pages`)
         : dictionary.totalFragments;
   results.innerHTML = `
@@ -1170,11 +1183,11 @@ function renderPanel(dictionary) {
       </div>
       <dl class="overview-facts" aria-label="${escapeHtml(language === 'es' ? 'Resumen del análisis' : 'Analysis summary')}">
         ${overviewFact(dictionary.analyzed, result.summary.analyzed, analyzedDetail)}
-        ${overviewFact(isHardestFragmentSelection ? dictionary.selectedFragments : dictionary.fragments, result.summary.fragments ?? result.fragments.length, fragmentDetail)}
+        ${overviewFact(dictionary.fragments, result.summary.fragments ?? result.fragments.length, fragmentDetail)}
       </dl>
     </section>`}
 
-    ${isEstimate ? `<p class="analysis-pending" role="status"><strong>${escapeHtml(language === 'es' ? 'Lista de candidatas preparada.' : 'Candidate list prepared.')}</strong> ${escapeHtml(language === 'es' ? 'Aún no se ha analizado ninguna página. Pulsa “Analizar ahora” para aplicar el modo completo a todas las páginas seleccionadas y calcular los fragmentos.' : 'No page has been analyzed yet. Choose “Analyze now” to apply Complete mode to every selected page and calculate fragments.')}</p>` : ''}
+    ${isEstimate ? `<p class="analysis-pending" role="status"><strong>${escapeHtml(language === 'es' ? 'Lista de candidatas preparada.' : 'Candidate list prepared.')}</strong> ${escapeHtml(language === 'es' ? 'Aún no se ha analizado ninguna página. Pulsa “Analizar ahora” para analizar todas las páginas seleccionadas y calcular los fragmentos.' : 'No page has been analyzed yet. Choose “Analyze now” to analyze every selected page and calculate fragments.')}</p>` : ''}
 
     ${isEstimate ? '' : `
       <section class="traffic-summary-panel" aria-labelledby="trafficSummaryTitle">
@@ -1223,7 +1236,7 @@ function renderPanel(dictionary) {
           </article>
           `).join('')}
         </div>
-        ${coverage ? `<p class="reason">${coverage.platform === 'browser_client_free' ? (language === 'es' ? 'Análisis ejecutado en este navegador sobre la página web o el archivo HTML indicado. No se guarda el contenido.' : 'Analysis run in this browser for the specified web page or HTML file. Content is not stored.') : coverage.maxCrawlDepth === null ? (language === 'es' ? `Modo completo: se recorren todos los enlaces internos detectables y las URLs de sitemap, hasta ${coverage.maxCandidates} URLs candidatas.` : `Complete mode: all detectable internal links and sitemap URLs are traversed, up to ${coverage.maxCandidates} candidate URLs.`) : (language === 'es' ? `Modo rápido: hasta ${coverage.maxCrawlDepth} niveles y ${coverage.maxCrawlPagesPerDomain} páginas exploradas por dominio. Sitemaps y candidatas: hasta ${coverage.maxCandidates}.` : `Fast mode: up to ${coverage.maxCrawlDepth} link levels and ${coverage.maxCrawlPagesPerDomain} crawled pages per domain. Sitemaps and candidates: up to ${coverage.maxCandidates}.`)}</p>` : ''}
+        ${coverage ? `<p class="reason">${coverage.platform === 'browser_client_free' ? (language === 'es' ? 'Análisis ejecutado en este navegador sobre la página web o el archivo HTML indicado. No se guarda el contenido.' : 'Analysis run in this browser for the specified web page or HTML file. Content is not stored.') : coverage.maxCrawlDepth === null ? (language === 'es' ? `Se recorren todos los enlaces internos detectables y las URLs de sitemap, hasta ${coverage.maxCandidates} URLs candidatas.` : `All detectable internal links and sitemap URLs are traversed, up to ${coverage.maxCandidates} candidate URLs.`) : (language === 'es' ? `Cobertura limitada del rastreo: hasta ${coverage.maxCrawlDepth} niveles y ${coverage.maxCrawlPagesPerDomain} páginas exploradas por dominio. Sitemaps y candidatas: hasta ${coverage.maxCandidates}.` : `Limited crawl coverage: up to ${coverage.maxCrawlDepth} link levels and ${coverage.maxCrawlPagesPerDomain} crawled pages per domain. Sitemaps and candidates: up to ${coverage.maxCandidates}.`)}</p>` : ''}
       </div>
     </details>
 
@@ -1289,7 +1302,7 @@ function renderFragments(dictionary) {
       <div class="panel-head">
         <div>
           <h2>${escapeHtml(dictionary.fragmentsTitle)}</h2>
-          <p>${escapeHtml(language === 'es' ? `Mostrando ${visibleFragments.length} de ${fragments.length} fragmentos en esta vista (${allFragments.length} en total)${fragmentFilter === 'all' ? '' : ` con filtro ${trafficLabel(fragmentFilter)}`}. ${result.criteria.fragmentSelection === 'hardest_from_selected_pages' ? 'Los más difíciles de la muestra aleatoria de páginas.' : 'Análisis completo.'}` : `Showing ${visibleFragments.length} of ${fragments.length} fragments in this view (${allFragments.length} total)${fragmentFilter === 'all' ? '' : ` with the ${trafficLabel(fragmentFilter)} filter`}. ${result.criteria.fragmentSelection === 'hardest_from_selected_pages' ? 'Hardest fragments from the random page sample.' : 'Complete analysis.'}`)}</p>
+          <p>${escapeHtml(language === 'es' ? `Mostrando ${visibleFragments.length} de ${fragments.length} fragmentos en esta vista (${allFragments.length} en total)${fragmentFilter === 'all' ? '' : ` con filtro ${trafficLabel(fragmentFilter)}`}.` : `Showing ${visibleFragments.length} of ${fragments.length} fragments in this view (${allFragments.length} total)${fragmentFilter === 'all' ? '' : ` with the ${trafficLabel(fragmentFilter)} filter`}.`)}</p>
         </div>
         <div class="panel-actions">
           <label class="sort-control">
@@ -1641,8 +1654,8 @@ function samplingCard(row, dictionary) {
 
 function selectionMethodLabel(method, lang) {
   const labels = lang === 'es'
-    ? { mandatory: 'página obligatoria', stratified_random: 'muestra aleatoria por sección', all_eligible: 'todas las elegibles' }
-    : { mandatory: 'required page', stratified_random: 'stratified random sample by section', all_eligible: 'all eligible pages' };
+    ? { mandatory: 'página obligatoria', stratified_random: 'selección documentada por sección', all_eligible: 'todas las elegibles' }
+    : { mandatory: 'required page', stratified_random: 'documented selection by section', all_eligible: 'all eligible pages' };
   return labels[method] ?? method;
 }
 
@@ -1857,7 +1870,7 @@ function reportSyllableValidationSection(result, table, { full, es }) {
     [t('Cambio estimado en el índice por esa diferencia', 'Estimated score change caused by that difference'), reportNumber(v.implied_score_bias, locale, 4, unavailable)],
   ];
   const generatedAt = v.generated_at ? new Date(v.generated_at).toLocaleString(locale, { timeZone: 'UTC' }) : unavailable;
-  return `<section class="method-check"><h3>${title}</h3>${summary}<h4>${t('Datos técnicos de la comprobación', 'Technical check data')}</h4>${table([t('Medida', 'Measure'), t('Resultado', 'Result')], rows)}<p>${t(`La coincidencia ponderada da más peso a las palabras frecuentes. Las ${excluded.toLocaleString(locale)} palabras sin referencia no se tratan como errores: simplemente quedan fuera de esta comparación. La diferencia con signo es Radar menos la referencia.`, `The weighted agreement gives more weight to frequent words. The ${excluded.toLocaleString(locale)} words without a reference are not treated as errors: they are simply left out of this comparison. The signed difference is Radar minus the reference.`)}</p><p class="url">${t('Fecha de la comprobación', 'Check date')}: ${escapeHtml(generatedAt)} (UTC). ${t('Huella de la versión comprobada', 'Fingerprint of the checked version')}: ${escapeHtml(v.current_server_sha256 || unavailable)}.</p>${result.syllableValidation?.matchesCurrentServer ? '' : `<p>${t('Atención: esta comprobación pertenece a otra versión del programa y debe repetirse antes de atribuirla a la versión actual.', 'Note: this check belongs to a different program version and must be repeated before it is attributed to the current version.')}</p>`}</section>`;
+  return `<section class="method-check"><h3>${title}</h3>${summary}<h4>${t('Datos técnicos de la comprobación', 'Technical check data')}</h4>${table([t('Medida', 'Measure'), t('Resultado', 'Result')], rows)}<p>${t(`La coincidencia ponderada da más peso a las palabras frecuentes. Las ${excluded.toLocaleString(locale)} palabras sin referencia no se tratan como errores: simplemente quedan fuera de esta comparación. La diferencia con signo es Radar menos la referencia.`, `The weighted agreement gives more weight to frequent words. The ${excluded.toLocaleString(locale)} words without a reference are not treated as errors: they are simply left out of this comparison. The signed difference is Radar minus the reference.`)}</p><p class="url">${t('Fecha de la comprobación', 'Check date')}: ${escapeHtml(generatedAt)} (UTC). ${t('Huella del cálculo comprobado', 'Fingerprint of the checked calculation')}: ${escapeHtml(v.processing_sha256 || unavailable)}.</p>${result.syllableValidation?.matchesCurrentProcessing ? '' : `<p>${t('Atención: esta comprobación pertenece a otra versión del cálculo o de su diccionario silábico y debe repetirse antes de atribuirla a la versión actual.', 'Note: this check belongs to another calculation or syllable-dictionary version and must be repeated before it is attributed to the current version.')}</p>`}</section>`;
 }
 
 function reportIndexValidationSection(result, table, { full, es }) {
@@ -1868,11 +1881,17 @@ function reportIndexValidationSection(result, table, { full, es }) {
     const v = result.indexValidation;
     const total = v?.groups?.find(group => group.group === 'all');
     if (!total) return `<section class="method-check"><h3>${t('Comprobación con software de referencia', 'Reference-software check')}</h3><p>${t('No se pudieron cargar datos de comparación con el software de referencia. Este informe no presenta una conclusión de equivalencia entre programas.', 'Comparison data with the reference software could not be loaded. This report does not present a conclusion of equivalence between programs.')}</p></section>`;
-    const difference = reportNumber(total.mean_absolute_difference, locale, 3, unavailable);
-    const lin = reportNumber(total.lins_concordance_correlation, locale, 4, unavailable);
+    // Microsoft Word reports Flesch Reading Ease on 0–100. The report must
+    // therefore use the explicitly bounded comparison, not the diagnostic
+    // unbounded calculation retained in the raw validation file.
+    const difference = reportNumber(total.bounded_mean_absolute_difference, locale, 3, unavailable);
+    const lin = reportNumber(total.bounded_lins_concordance_correlation, locale, 4, unavailable);
     const summary = `<p><strong>${t('Qué se comparó.', 'What was compared.')}</strong> ${t('Radar y Microsoft Word analizaron los mismos 100 textos en inglés mediante Flesch Reading Ease, en una escala común de 0 a 100.', 'Radar and Microsoft Word analyzed the same 100 English texts using Flesch Reading Ease, on a shared 0 to 100 scale.')}</p><p><strong>${t('Resultado.', 'Result.')}</strong> ${t(`La diferencia media entre puntuaciones fue de ${difference} puntos. El coeficiente de concordancia de Lin fue ${lin}; un valor de 1 indica coincidencia perfecta.`, `The mean difference between scores was ${difference} points. Lin's concordance coefficient was ${lin}; a value of 1 indicates perfect agreement.`)}</p><p><strong>${t('Qué significa.', 'What this means.')}</strong> ${t('La comparación mide el parecido numérico entre ambos resultados. No prueba que las personas comprendan el texto ni que ambos programas tengan reglas internas idénticas.', 'The comparison measures numerical similarity between both results. It does not prove that people understand the text or that both programs use identical internal rules.')}</p>`;
-    if (!full) return `<section class="method-check"><h3>${t('Comprobación con software de referencia', 'Reference-software check')}</h3>${summary}</section>`;
-    return `<section class="method-check"><h3>${t('Comprobación con software de referencia', 'Reference-software check')}</h3>${summary}${table([t('Medida', 'Measure'), t('Resultado', 'Result')], [[t('Textos comparados', 'Texts compared'), String(total.texts_compared)], [t('Diferencia media absoluta', 'Mean absolute difference'), `${difference} ${t('puntos', 'points')}`], [t('Diferencia media con signo (Radar menos Word)', 'Mean signed difference (Radar minus Word)'), `${reportNumber(total.mean_signed_difference, locale, 3, unavailable)} ${t('puntos', 'points')}`], [t('Relación entre las puntuaciones (Pearson)', 'Relationship between scores (Pearson)'), reportNumber(total.pearson_correlation, locale, 4, unavailable)], [t('Concordancia de nivel y dispersión (Lin)', 'Agreement in score level and spread (Lin)'), lin]])}</section>`;
+    const currentProcessingNote = v.matchesCurrentProcessing
+      ? ''
+      : `<p>${t('Atención: esta comparación pertenece a otra versión del cálculo o de su diccionario silábico y debe repetirse antes de atribuirla a la versión actual.', 'Note: this comparison belongs to another calculation or syllable-dictionary version and must be repeated before it is attributed to the current version.')}</p>`;
+    if (!full) return `<section class="method-check"><h3>${t('Comprobación con software de referencia', 'Reference-software check')}</h3>${summary}${currentProcessingNote}</section>`;
+    return `<section class="method-check"><h3>${t('Comprobación con software de referencia', 'Reference-software check')}</h3>${summary}${table([t('Medida', 'Measure'), t('Resultado', 'Result')], [[t('Textos comparados', 'Texts compared'), String(total.texts_compared)], [t('Diferencia media absoluta (escala 0–100)', 'Mean absolute difference (0–100 scale)'), `${difference} ${t('puntos', 'points')}`], [t('Diferencia media con signo (Radar menos Word; escala 0–100)', 'Mean signed difference (Radar minus Word; 0–100 scale)'), `${reportNumber(total.bounded_mean_signed_difference, locale, 3, unavailable)} ${t('puntos', 'points')}`], [t('Relación entre las puntuaciones (Pearson; escala 0–100)', 'Relationship between scores (Pearson; 0–100 scale)'), reportNumber(total.bounded_pearson_correlation, locale, 4, unavailable)], [t('Concordancia de nivel y dispersión (Lin; escala 0–100)', 'Agreement in score level and spread (Lin; 0–100 scale)'), lin]])}${currentProcessingNote}</section>`;
   }
   const v = result.indexValidation?.spanish;
   if (!v) return `<section class="method-check"><h3>${t('Comprobación con INFLESZ', 'INFLESZ check')}</h3><p>${t('No se pudieron cargar los datos de comparación con INFLESZ. Este informe no presenta una conclusión de equivalencia entre ambos programas.', 'The comparison data with INFLESZ could not be loaded. This report does not present a conclusion of equivalence between both programs.')}</p></section>`;
@@ -1886,7 +1905,10 @@ function reportIndexValidationSection(result, table, { full, es }) {
     ? t(`Los ${textsCompared.toLocaleString(locale)} textos obtuvieron una puntuación en ambos programas. No faltó ningún resultado externo y no se excluyó ningún texto de los cálculos.`, `All ${textsCompared.toLocaleString(locale)} texts received a score in both programs. No external result was missing and no text was excluded from the calculations.`)
     : t(`${textsCompared.toLocaleString(locale)} textos obtuvieron una puntuación en ambos programas. ${externalMissing.toLocaleString(locale)} resultado${externalMissing === 1 ? '' : 's'} externo${externalMissing === 1 ? '' : 's'} no estuvo disponible${externalMissing === 1 ? '' : 's'} y se excluyó${externalMissing === 1 ? '' : 'eron'} de los cálculos.`, `${textsCompared.toLocaleString(locale)} texts received a score in both programs. ${externalMissing.toLocaleString(locale)} external result${externalMissing === 1 ? ' was' : 's were'} unavailable and excluded from the calculations.`);
   const summary = `<p><strong>${t('Qué se comparó.', 'What was compared.')}</strong> ${t(`Radar e INFLESZ analizaron los mismos ${textsPrepared.toLocaleString(locale)} textos de prueba con la escala Szigriszt-Pazos.`, `Radar and INFLESZ analyzed the same ${textsPrepared.toLocaleString(locale)} test texts with the Szigriszt-Pazos scale.`)}</p><p><strong>${t('Resultado.', 'Result.')}</strong> ${availability} ${t(`La diferencia media entre puntuaciones fue de ${difference} puntos y la categoría coincidió en ${categoryText}.`, `The mean difference between scores was ${difference} points and the category matched in ${categoryText}.`)}</p><p><strong>${t('Qué significa.', 'What this means.')}</strong> ${t('Esta comprobación mide el acuerdo con INFLESZ en estos textos de prueba. No demuestra que una persona concreta comprenda un texto ni sustituye pruebas con usuarios.', 'This check measures agreement with INFLESZ on these test texts. It does not show that a particular person will understand a text or replace user testing.')}</p>`;
-  if (!full) return `<section class="method-check"><h3>${t('Comprobación con INFLESZ', 'INFLESZ check')}</h3>${summary}</section>`;
+  const currentProcessingNote = result.indexValidation?.matchesCurrentProcessing
+    ? ''
+    : `<p>${t('Atención: esta comparación pertenece a otra versión del cálculo o de su diccionario silábico y debe repetirse antes de atribuirla a la versión actual.', 'Note: this comparison belongs to another calculation or syllable-dictionary version and must be repeated before it is attributed to the current version.')}</p>`;
+  if (!full) return `<section class="method-check"><h3>${t('Comprobación con INFLESZ', 'INFLESZ check')}</h3>${summary}${currentProcessingNote}</section>`;
   const rows = [
     [t('Programa de referencia', 'Reference program'), v.reference_software || 'INFLESZ'],
     [t('Textos preparados', 'Prepared texts'), textsPrepared.toLocaleString(locale)],
@@ -1904,7 +1926,7 @@ function reportIndexValidationSection(result, table, { full, es }) {
     ? `<details><summary>${t(`Ver los ${v.category_mismatches.length} textos con una categoría distinta`, `View the ${v.category_mismatches.length} texts with a different category`)}</summary>${table([t('Texto', 'Text'), 'Radar', 'INFLESZ', t('Límite cercano', 'Nearby threshold')], v.category_mismatches.map(item => [item.text_id, reportNumber(item.radar_score, locale, 3, unavailable), reportNumber(item.inflesz_score, locale, 3, unavailable), reportNumber(item.threshold, locale, 0, unavailable)]))}<p>${t('Estas diferencias aparecen cerca de un límite de categoría. Son útiles para revisar cómo se interpreta una puntuación próxima al corte.', 'These differences occur close to a category threshold. They are useful when interpreting a score near a cutoff.')}</p></details>`
     : '';
   const generatedAt = v.generated_at ? new Date(v.generated_at).toLocaleString(locale, { timeZone: 'UTC' }) : unavailable;
-  return `<section class="method-check"><h3>${t('Comprobación con INFLESZ', 'INFLESZ check')}</h3>${summary}<h4>${t('Datos técnicos de la comparación', 'Technical comparison data')}</h4>${table([t('Medida', 'Measure'), t('Resultado', 'Result')], rows)}${mismatchDetails}<p>${t('La diferencia media absoluta expresa la distancia media entre dos puntuaciones, sin importar cuál es mayor. Pearson indica si las puntuaciones aumentan y disminuyen juntas; Lin también tiene en cuenta si están en el mismo nivel. Un valor de 1 representa concordancia perfecta.', 'The mean absolute difference is the average distance between two scores, regardless of which is higher. Pearson indicates whether scores rise and fall together; Lin also considers whether they are at the same level. A value of 1 represents perfect agreement.')}</p><p class="url">${t('Fecha de la comparación', 'Comparison date')}: ${escapeHtml(generatedAt)} (UTC).</p></section>`;
+  return `<section class="method-check"><h3>${t('Comprobación con INFLESZ', 'INFLESZ check')}</h3>${summary}<h4>${t('Datos técnicos de la comparación', 'Technical comparison data')}</h4>${table([t('Medida', 'Measure'), t('Resultado', 'Result')], rows)}${mismatchDetails}<p>${t('La diferencia media absoluta expresa la distancia media entre dos puntuaciones, sin importar cuál es mayor. Pearson indica si las puntuaciones aumentan y disminuyen juntas; Lin también tiene en cuenta si están en el mismo nivel. Un valor de 1 representa concordancia perfecta.', 'The mean absolute difference is the average distance between two scores, regardless of which is higher. Pearson indicates whether scores rise and fall together; Lin also considers whether they are at the same level. A value of 1 represents perfect agreement.')}</p><p class="url">${t('Fecha de la comparación', 'Comparison date')}: ${escapeHtml(generatedAt)} (UTC). ${t('Huella del cálculo comprobado', 'Fingerprint of the checked calculation')}: ${escapeHtml(v.processing_sha256 || unavailable)}.</p>${currentProcessingNote}</section>`;
 }
 
 function openScientificReport(result, kind) {

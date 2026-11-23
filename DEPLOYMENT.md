@@ -34,8 +34,9 @@ server.
 
 - `readabilityradar.com` is an active Cloudflare zone on the Free plan.
 - The Worker is attached to the root domain and serves the production site.
-- `www.readabilityradar.com` also serves the Worker; a canonical redirect to
-  the root domain remains a planned configuration improvement.
+- `www.readabilityradar.com` redirects permanently (301) to
+  `https://readabilityradar.com` in the Worker, so the root domain is
+  canonical.
 - Source code and Cloudflare configuration are public in this repository.
 - The Worker secret `TURNSTILE_SECRET_KEY` is configured in Cloudflare only;
   it is never placed in source code or GitHub.

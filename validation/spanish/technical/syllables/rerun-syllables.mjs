@@ -1,9 +1,7 @@
 import fs from 'node:fs/promises';
-import crypto from 'node:crypto';
 import { loadCore } from '../../../technical/load-core.mjs';
 const base=new URL('.',import.meta.url);
-const source=await fs.readFile(new URL('../../../../server.mjs',base),'utf8');
-const { core: ctx } = await loadCore();
+const { core: ctx, sha256: serverSha256, coreSha256, processingSha256 } = await loadCore();
 const input=JSON.parse((await fs.readFile(new URL('reference-counts.json',base),'utf8')).replace(/^\uFEFF/,''));
 const rows=input.map(r=>({word:r.word,frequency:Number(r.frequency),current_count:ctx.countSyllables(r.word,r.language),reference_count:r.reference===''?null:Number(r.reference)}));
 const language=input[0].language;
@@ -24,7 +22,7 @@ const summary={language,version:'current_radar',total_word_types:rows.length,com
  dictionary_covered_word_types:valid.filter(r=>ctx.spanishSyllableSource(r.word)==='pylabeador').length,
  dictionary_coverage:valid.filter(r=>ctx.spanishSyllableSource(r.word)==='pylabeador').length/valid.length,
  heuristic_word_types:valid.filter(r=>ctx.spanishSyllableSource(r.word)!=='pylabeador').length,
- generated_at:new Date().toISOString(),current_server_sha256:crypto.createHash('sha256').update(source).digest('hex')};
+ generated_at:new Date().toISOString(),server_sha256:serverSha256,core_sha256:coreSha256,processing_sha256:processingSha256.es};
 async function csv(name,headers,values){await fs.writeFile(new URL(name,base),'\uFEFF'+[headers,...values].map(row=>row.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n'));}
 await csv('word-comparison.csv',['word','frequency','current_count','reference_count','difference','exact_agreement'],rows.map(r=>[r.word,r.frequency,r.current_count,r.reference_count,r.reference_count===null?'':r.current_count-r.reference_count,r.reference_count===null?'':r.current_count===r.reference_count]));
 await csv('agreement-summary.csv',Object.keys(summary),[Object.values(summary)]);

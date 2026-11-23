@@ -1,4 +1,5 @@
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
@@ -6,24 +7,29 @@ import { fileURLToPath } from 'node:url';
 import { exec, execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { tmpdir, homedir } from 'node:os';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, webcrypto } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
+import { createReadabilityCore, MAX_HTML_CHARS, processingFingerprintMaterial } from './public/core/readability-core.mjs';
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url));
 const publicDir = join(rootDir, 'public');
 const englishSyllableDictionaryPath = join(rootDir, 'resources', 'cmudict-syllables.json');
 const englishSyllableData = JSON.parse(readFileSync(englishSyllableDictionaryPath, 'utf8'));
-globalThis.ENGLISH_SYLLABLE_DICTIONARY = englishSyllableData.entries;
-globalThis.ENGLISH_SYLLABLE_CACHE = new Map();
 const spanishSyllableDictionaryPath = join(rootDir, 'resources', 'pylabeador-syllables.json');
 const spanishSyllableData = JSON.parse(readFileSync(spanishSyllableDictionaryPath, 'utf8'));
-globalThis.SPANISH_SYLLABLE_DICTIONARY = spanishSyllableData.entries;
-globalThis.SPANISH_SYLLABLE_CACHE = new Map();
+const readabilityCore = createReadabilityCore({
+  englishSyllableDictionary: englishSyllableData.entries,
+  spanishSyllableDictionary: spanishSyllableData.entries,
+  crypto: webcrypto,
+});
 const execFileAsync = promisify(execFile);
 const analysisJobs = new Map();
 const REMOTE_BRIDGE_ORIGINS = new Set([
   'https://readabilityradar.com',
   'https://www.readabilityradar.com',
 ]);
+const BLOCKED_BRIDGE_PORTS = new Set([22, 25, 53, 110, 143, 2375, 2376, 3306, 3389, 5432, 6379, 8080, 8443]);
 
 const LIMITS = {
   maxPages: 10000,
@@ -39,15 +45,19 @@ const LIMITS = {
   // Analysis is separately bounded from discovery. A large sitemap must never
   // turn into an unbounded page-by-page request after candidates are found.
   fastAnalysisBudgetMs: 30000,
+  // An exact page may need one network retrieval plus a local-browser render.
+  // It is deliberately independent from the former multi-page deadline.
+  exactPageAnalysisBudgetMs: 40000,
   maxAnalysisConcurrency: 8,
   // Modern home pages can legitimately grow after client-side rendering. The complete document is accepted or rejected; it is never truncated.
-  maxHtmlChars: 6000000,
+  maxHtmlChars: MAX_HTML_CHARS,
 };
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml',
   '.txt': 'text/plain; charset=utf-8',
@@ -71,14 +81,23 @@ const server = createServer(async (request, response) => {
       });
       return;
     }
+    if (request.method === 'GET' && url.pathname === '/api/dictionary') {
+      const language = url.searchParams.get('language') === 'en' ? 'en' : 'es';
+      sendJson(response, 200, language === 'en' ? englishSyllableData.entries : spanishSyllableData.entries);
+      return;
+    }
     if (request.method === 'POST' && url.pathname === '/api/analyze') {
       const body = await readJson(request);
+      const requestPolicy = { publicBridge: isRemoteBridgeRequest(request) };
+      // Reject a private target before accepting a background job. The same
+      // check is repeated inside analyze() for defence in depth.
+      if (requestPolicy.publicBridge) await assertPublicBridgeInputs(body);
       if (body.background === true) {
-        const job = startAnalysisJob(body);
+        const job = startAnalysisJob(body, requestPolicy);
         sendJson(response, 202, { jobId: job.id });
         return;
       }
-      const result = await analyze(body);
+      const result = await analyze(body, () => {}, requestPolicy);
       result.syllableValidation = await loadSyllableValidation(result.language);
       sendJson(response, 200, result);
       return;
@@ -98,8 +117,8 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    if (request.method === 'GET' && url.pathname.startsWith('/demo/')) {
-      sendDemo(response, url.pathname.includes('/en') ? 'en' : 'es');
+    if (request.method === 'GET' && (url.pathname === '/demo/es' || url.pathname === '/demo/en')) {
+      await serveStatic(`${url.pathname}.html`, response);
       return;
     }
 
@@ -119,11 +138,22 @@ listen(requestedPort, requestedPort === 8787 ? [55481] : []);
 
 async function loadSyllableValidation(language) {
   try {
-    const snapshots = JSON.parse(await readFile(join(publicDir, 'syllable-validation.json'), 'utf8'));
+    const [snapshotSource, coreSource, serverSource] = await Promise.all([
+      readFile(join(publicDir, 'syllable-validation.json'), 'utf8'),
+      readFile(join(publicDir, 'core', 'readability-core.mjs'), 'utf8'),
+      readFile(join(rootDir, 'server.mjs'), 'utf8'),
+    ]);
+    const snapshots = JSON.parse(snapshotSource);
     const data = snapshots[language];
     if (!data || data.version !== 'current_radar') return null;
-    const source = await readFile(fileURLToPath(import.meta.url));
-    return { data, matchesCurrentServer: data.current_server_sha256 === createHash('sha256').update(source).digest('hex') };
+    const dictionary = language === 'en' ? englishSyllableData.entries : spanishSyllableData.entries;
+    const processingSha256 = createHash('sha256').update(processingFingerprintMaterial(coreSource, dictionary)).digest('hex');
+    const serverSha256 = createHash('sha256').update(serverSource).digest('hex');
+    return {
+      data,
+      matchesCurrentProcessing: data.processing_sha256 === processingSha256,
+      matchesCurrentServer: data.server_sha256 === serverSha256,
+    };
   } catch {
     return null;
   }
@@ -209,6 +239,10 @@ function applyBridgeCors(request, response) {
   response.setHeader('vary', 'Origin');
 }
 
+function isRemoteBridgeRequest(request) {
+  return REMOTE_BRIDGE_ORIGINS.has(request.headers.origin);
+}
+
 async function serveStatic(pathname, response) {
   const cleanPath = pathname === '/' ? '/index.html' : pathname;
   const normalized = normalize(decodeURIComponent(cleanPath)).replace(/^(\.\.[/\\])+/, '');
@@ -227,7 +261,7 @@ async function serveStatic(pathname, response) {
   response.end(content);
 }
 
-function startAnalysisJob(body) {
+function startAnalysisJob(body, requestPolicy = {}) {
   const id = randomBytes(16).toString('hex');
   const job = {
     id,
@@ -243,7 +277,7 @@ function startAnalysisJob(body) {
   }
   void (async () => {
     try {
-      const result = await analyze(body, (progress) => { job.progress = progress; });
+      const result = await analyze(body, (progress) => { job.progress = progress; }, requestPolicy);
       result.syllableValidation = await loadSyllableValidation(result.language);
       job.result = result;
       job.progress = { ...job.progress, phase: 'complete' };
@@ -263,7 +297,7 @@ function expireAnalysisJob(id) {
   timer.unref?.();
 }
 
-async function analyze(body, onProgress = () => {}) {
+async function analyze(body, onProgress = () => {}, requestPolicy = {}) {
   const language = body.language === 'en' ? 'en' : 'es';
   const scope = body.scope === 'page' ? 'page' : 'domain';
   const estimateOnly = Boolean(body.estimateOnly);
@@ -281,6 +315,8 @@ async function analyze(body, onProgress = () => {}) {
   const inputs = parseUrlList(body.input);
   const exactUrls = parseUrlList(body.exactUrls);
 
+  if (requestPolicy.publicBridge) await assertPublicBridgeInputs(body, inputs, exactUrls);
+
   if (!inputs.length && !localHtml) {
     throw new Error(language === 'en' ? 'Enter at least one URL.' : 'Introduce al menos una URL.');
   }
@@ -290,7 +326,7 @@ async function analyze(body, onProgress = () => {}) {
     : { maxPages: LIMITS.maxCrawlPagesPerDomain, maxDepth: LIMITS.maxCrawlDepth, mode: 'fast', timeBudgetMs: LIMITS.estimateDiscoveryBudgetMs };
   onProgress({ phase: 'discovery', completed: 0, total: null });
   const domainDiscovery = !localHtml && scope === 'domain'
-    ? await buildDomainCandidates(inputs, exactUrls, language, includeRelatedSubdomains, crawlPolicy)
+    ? await buildDomainCandidates(inputs, exactUrls, language, includeRelatedSubdomains, crawlPolicy, requestPolicy)
     : null;
   const candidates = localHtml
     ? [{
@@ -329,7 +365,10 @@ async function analyze(body, onProgress = () => {}) {
         if (index >= selected.length) return;
         pageSlots[index] = await analyzePage(
           selected[index], language, minWords, minFragmentWords, scope === 'page',
-          analysisDeadline === null ? LIMITS.fetchTimeoutMs + 8000 : Math.max(1, analysisDeadline - Date.now()),
+          analysisDeadline === null
+            ? (scope === 'page' ? LIMITS.exactPageAnalysisBudgetMs : LIMITS.fetchTimeoutMs + 8000)
+            : Math.max(1, analysisDeadline - Date.now()),
+          requestPolicy,
         );
         processedPages += 1;
         onProgress({ phase: 'analysis', completed: processedPages, total: selected.length });
@@ -338,7 +377,7 @@ async function analyze(body, onProgress = () => {}) {
     await Promise.all(Array.from({ length: Math.min(LIMITS.maxAnalysisConcurrency, selected.length) }, worker));
     for (let index = 0; index < selected.length; index += 1) {
       if (!pageSlots[index]) {
-        pageSlots[index] = pendingPage(selected[index], language);
+        pageSlots[index] = await pendingPage(selected[index], language);
         analysisTimeLimitReached = true;
       }
     }
@@ -373,16 +412,16 @@ async function analyze(body, onProgress = () => {}) {
   pages.forEach((page) => { delete page.contentFingerprint; });
 
   const analyzed = pages.filter((page) => page.status === 'analyzed');
-  const allFragments = pages.flatMap((page) =>
-    page.fragments.map((fragment, index) => ({
+  const allFragments = await Promise.all(pages.flatMap((page) =>
+    page.fragments.map(async (fragment, index) => ({
       ...fragment,
-      fragmentId: buildFragmentId(page.url, index, fragment.text),
+      fragmentId: await buildFragmentId(page.url, index, fragment.text),
       index: fragment.sourceIndex ?? index + 1,
       pageTitle: page.title,
       pageUrl: page.url,
       link: page.url,
     })),
-  );
+  ));
   const fragments = fragmentLimit ? selectHardestFragments(allFragments, fragmentLimit) : allFragments.sort(compareFragmentDifficulty);
   // Fragments are returned once, in the top-level collection. Keeping their
   // full text again inside every page doubles large JSON responses and can make
@@ -429,12 +468,12 @@ async function analyze(body, onProgress = () => {}) {
       : scope === 'domain'
         ? summarizeDiscoveredDomains(domainDiscovery.domains, candidates, selected, pages, language, randomSample)
         : summarizeDomains(inputs, candidates, selected, pages, language, scope, randomSample),
-    samplingFrame: candidates.map((candidate) => {
+    samplingFrame: await Promise.all(candidates.map(async (candidate) => {
       const selectedCandidate = selected.find((item) => normalizeUrlKey(item.url) === normalizeUrlKey(candidate.url));
       const page = pages.find((item) => normalizeUrlKey(item.url) === normalizeUrlKey(candidate.url));
       return {
         url: candidate.url,
-        pageId: buildPageId(candidate.url),
+        pageId: await buildPageId(candidate.url),
         source: candidate.source,
         selectionReason: candidate.selectionReason,
         selectionMethod: selectedCandidate?.selectionMethod ?? '',
@@ -450,7 +489,7 @@ async function analyze(body, onProgress = () => {}) {
         score: page?.status === 'analyzed' ? page.score : null,
         level: page?.status === 'analyzed' ? page.level : null,
       };
-    }),
+    })),
     criteria: {
       maxPages,
       analysisTimeLimitReached,
@@ -463,7 +502,9 @@ async function analyze(body, onProgress = () => {}) {
       categories: classificationRules(language),
       processingRules: language === 'es' ? 'inflesz-documented-v1' : 'english-v1',
       selectedPageCount: selected.length,
-      maxPagesLabel: completeMode
+      maxPagesLabel: scope === 'page'
+        ? (language === 'en' ? 'Exact URL or local HTML' : 'URL exacta o HTML local')
+        : completeMode
         ? (fragmentLimit
             ? (language === 'en' ? 'Detected sitemap, up to 10 hardest fragments from selected pages' : 'Sitemap detectado, hasta 10 fragmentos más difíciles de las páginas seleccionadas')
             : (language === 'en' ? 'All discovered eligible pages' : 'Todas las páginas elegibles detectadas'))
@@ -480,11 +521,15 @@ async function analyze(body, onProgress = () => {}) {
   };
 }
 
-async function buildDomainCandidates(inputs, exactUrls, language, includeRelatedSubdomains, crawlPolicy) {
+async function assertPublicBridgeInputs(body, inputs = parseUrlList(body.input), exactUrls = parseUrlList(body.exactUrls)) {
+  await Promise.all([...inputs, ...exactUrls].map(assertPublicBridgeUrl));
+}
+
+async function buildDomainCandidates(inputs, exactUrls, language, includeRelatedSubdomains, crawlPolicy, requestPolicy = {}) {
   const candidates = [];
   const domains = [];
   for (const startUrl of inputs) {
-    const discovered = await discoverDomain(startUrl, exactUrls, language, includeRelatedSubdomains, crawlPolicy);
+    const discovered = await discoverDomain(startUrl, exactUrls, language, includeRelatedSubdomains, crawlPolicy, requestPolicy);
     candidates.push(...discovered.candidates);
     domains.push(discovered.domain);
   }
@@ -495,12 +540,12 @@ async function buildDomainCandidates(inputs, exactUrls, language, includeRelated
   };
 }
 
-async function discoverDomain(startUrl, exactUrls, language, includeRelatedSubdomains, crawlPolicy) {
+async function discoverDomain(startUrl, exactUrls, language, includeRelatedSubdomains, crawlPolicy, requestPolicy = {}) {
   const start = new URL(startUrl);
   const scope = createDomainScope(start, includeRelatedSubdomains);
   const discoveryDeadline = Date.now() + crawlPolicy.timeBudgetMs;
   const remainingDiscoveryMs = () => Math.max(0, discoveryDeadline - Date.now());
-  const robots = await fetchRobotsPolicy(start.origin, remainingDiscoveryMs());
+  const robots = await fetchRobotsPolicy(start.origin, remainingDiscoveryMs(), requestPolicy);
   const robotsPolicies = new Map([[start.origin, robots]]);
   const candidateMap = new Map();
   const visited = new Set();
@@ -528,7 +573,7 @@ async function discoverDomain(startUrl, exactUrls, language, includeRelatedSubdo
     if (!robotsPolicies.has(origin)) {
       const remaining = remainingDiscoveryMs();
       if (remaining <= 0) return { available: false, sitemapUrls: [], isAllowed: () => false };
-      robotsPolicies.set(origin, await fetchRobotsPolicy(origin, remaining));
+      robotsPolicies.set(origin, await fetchRobotsPolicy(origin, remaining, requestPolicy));
     }
     return robotsPolicies.get(origin);
   }
@@ -575,7 +620,7 @@ async function discoverDomain(startUrl, exactUrls, language, includeRelatedSubdo
   for (const exactUrl of exactUrls) {
     try { if (scope.includes(new URL(exactUrl))) register(exactUrl, 'required', 0, true); } catch { /* Input validation already ran. */ }
   }
-  const sitemapResult = await discoverSitemapLinks(start.origin, robots.sitemapUrls, scope, robots, discoveryDeadline);
+  const sitemapResult = await discoverSitemapLinks(start.origin, robots.sitemapUrls, scope, robots, discoveryDeadline, requestPolicy);
   if (sitemapResult.limitReached) partialReasons.add('sitemap_candidate_limit');
   if (sitemapResult.timeLimitReached) partialReasons.add('crawl_time_limit');
   for (const href of sitemapResult.links) register(href, 'sitemap', 0);
@@ -595,7 +640,7 @@ async function discoverDomain(startUrl, exactUrls, language, includeRelatedSubdo
         candidate.exclusionReason = language === 'en' ? 'Excluded by this host’s robots.txt for this crawler.' : 'Excluida por el robots.txt de este host para este rastreador.';
         continue;
       }
-      const html = await fetchHtml(current.url, remainingDiscoveryMs());
+      const html = await fetchHtml(current.url, remainingDiscoveryMs(), requestPolicy);
       const links = extractLinks(html, current.url);
       if (crawlPolicy.maxDepth !== null && current.depth >= crawlPolicy.maxDepth) {
         if (links.length) partialReasons.add('depth_limit');
@@ -786,19 +831,11 @@ function registrableDomain(hostname) {
 }
 
 function canonicalUrl(value) {
-  const url = new URL(value);
-  url.hash = '';
-  for (const key of [...url.searchParams.keys()]) {
-    if (/^(utm_[a-z]+|fbclid|gclid|mc_[a-z]+)$/i.test(key)) url.searchParams.delete(key);
-  }
-  url.searchParams.sort();
-  return url;
+  return readabilityCore.canonicalUrl(value);
 }
 
 function sectionForUrl(url, startHost) {
-  if (url.hostname !== startHost) return `subdomain:${url.hostname}`;
-  const first = url.pathname.split('/').filter(Boolean)[0];
-  return first ? `/${first}/` : '/';
+  return readabilityCore.sectionForUrl(url, startHost);
 }
 
 function summarizeDiscoveredDomains(discoveries, candidates, selected, pages, language, randomSample = false) {
@@ -860,11 +897,11 @@ function summarizeDomains(inputs, candidates, selected, pages, language, scope, 
   });
 }
 
-function pendingPage(candidate, language) {
+async function pendingPage(candidate, language) {
   const { html: _candidateHtml, ...publicCandidate } = candidate;
   return {
     ...publicCandidate,
-    pageId: buildPageId(candidate.url),
+    pageId: await buildPageId(candidate.url),
     title: candidate.url,
     status: 'pending',
     statusLabel: language === 'en' ? 'pending time limit' : 'pendiente por límite de tiempo',
@@ -880,11 +917,13 @@ function pendingPage(candidate, language) {
   };
 }
 
-async function analyzePage(candidate, language, minWords, minFragmentWords, exactPageMode = false, timeBudgetMs = LIMITS.fetchTimeoutMs) {
+async function analyzePage(candidate, language, minWords, minFragmentWords, exactPageMode = false, timeBudgetMs = LIMITS.fetchTimeoutMs, requestPolicy = {}) {
   const { html: _candidateHtml, ...publicCandidate } = candidate;
   const analysisDeadline = Date.now() + timeBudgetMs;
+  let pageId = '';
   try {
-    let html = candidate.html ?? await fetchHtml(candidate.url, Math.max(1, analysisDeadline - Date.now()));
+    pageId = await buildPageId(candidate.url);
+    let html = candidate.html ?? await fetchHtml(candidate.url, Math.max(1, analysisDeadline - Date.now()), requestPolicy);
     const title = extractTitle(html) || candidate.url;
     let textBlocks = extractTextBlocks(html);
     let pageText = extractVisibleText(html);
@@ -895,12 +934,15 @@ async function analyzePage(candidate, language, minWords, minFragmentWords, exac
       ? { shouldRender: false, reason: '' }
       : detectDynamicContentSignals(html, stats.words, textBlocks.length);
     // Every page with evidence of client-side content is rendered and compared, even when its initial HTML is long enough.
-    const shouldRender = !candidate.html && (exactPageMode || dynamicSignals.shouldRender);
+    // A request coming from the public web page must never make Chromium fetch
+    // subresources or redirects on behalf of a remote caller. Native/local use
+    // retains the full dynamic-rendering capability.
+    const shouldRender = !candidate.html && !requestPolicy.publicBridge && (exactPageMode || dynamicSignals.shouldRender);
 
     if (shouldRender) {
       let renderedHtml = '';
       try {
-        renderedHtml = await fetchRenderedHtml(candidate.url, Math.max(1, analysisDeadline - Date.now()));
+        renderedHtml = await fetchRenderedHtml(candidate.url, Math.max(1, analysisDeadline - Date.now()), requestPolicy);
       } catch (error) {
         // A size limit is a data-integrity boundary: never replace a complete page with a truncated DOM.
         if (error instanceof Error && error.message === 'PAGE_HTML_TOO_LARGE') throw error;
@@ -923,7 +965,7 @@ async function analyzePage(candidate, language, minWords, minFragmentWords, exac
     if (stats.words < minWords && !renderedFallbackUsed && !exactPageMode) {
       return {
         ...publicCandidate,
-        pageId: buildPageId(candidate.url),
+        pageId,
         title,
         status: 'discarded',
         statusLabel: language === 'en' ? 'discarded' : 'descartada',
@@ -939,51 +981,24 @@ async function analyzePage(candidate, language, minWords, minFragmentWords, exac
       };
     }
 
-    const fullTextScore = readabilityScore(stats, language);
-    const declaredLanguage = html.match(/<html\b[^>]*\blang\s*=\s*["']([a-z]{2})(?:-[a-z]+)?["']/i)?.[1]?.toLowerCase();
-    const detectedPageLanguage = detectTextLanguage(pageText);
-    const pageLanguage = detectedPageLanguage === 'unknown' && ['es', 'en'].includes(declaredLanguage)
-      ? declaredLanguage
-      : detectedPageLanguage;
-    const blocks = textBlocks.map((text, index) => {
-      const detected = detectTextLanguage(text);
-      return { text: text.trim(), sourceIndex: index + 1,
-        detectedLanguage: detected === 'unknown' && ['es','en'].includes(declaredLanguage) ? declaredLanguage : detected,
-        stats: textStats(text, language) };
+    const processed = await readabilityCore.analyzeHtmlContent({
+      html,
+      url: candidate.url,
+      language,
+      minFragmentWords,
+      rendering: renderedFallbackUsed ? 'rendered' : 'static',
     });
-    const fragmentCandidates = blocks
-      .filter((block) => block.detectedLanguage === language)
-      .filter((block) => block.stats.words >= minFragmentWords)
-      .map((block) => ({
-        text: block.text,
-        sourceIndex: block.sourceIndex,
-        language: block.detectedLanguage,
-        words: block.stats.words,
-        sentences: block.stats.sentences,
-        syllables: block.stats.syllables,
-        score: readabilityScore(block.stats, language),
-      }))
-      .map((fragment) => ({
-        ...fragment,
-        rawScore: fragment.score,
-        score: round1(fragment.score),
-        level: levelForScore(fragment.score, language),
-      }));
-    // Responsive templates often repeat the same paragraph for separate visual layouts. Keep its first source position only.
-    const fragments = deduplicateFragments(fragmentCandidates);
-    const extraction = {
-      blocksDetected: blocks.length,
-      languageExcluded: blocks.filter(block => block.detectedLanguage !== language).length,
-      lengthExcluded: blocks.filter(block => block.detectedLanguage === language && block.stats.words < minFragmentWords).length,
-      eligible: fragments.length,
-      duplicateParagraphsExcluded: fragmentCandidates.length - fragments.length,
-      declaredLanguage: declaredLanguage ?? null,
-      detectedPageLanguage: pageLanguage,
-    };
+    pageId = processed.pageId;
+    pageText = processed.pageText;
+    stats = processed.stats;
+    const fullTextScore = processed.fullTextScore;
+    const pageLanguage = processed.detectedPageLanguage;
+    const fragments = processed.fragments;
+    const extraction = processed.extraction;
     if (!fragments.length && pageLanguage !== language) {
       return {
         ...publicCandidate,
-        pageId: buildPageId(candidate.url),
+        pageId,
         title,
         status: 'discarded',
         statusLabel: language === 'en' ? 'discarded' : 'descartada',
@@ -1005,7 +1020,7 @@ async function analyzePage(candidate, language, minWords, minFragmentWords, exac
 
     return {
       ...publicCandidate,
-      pageId: buildPageId(candidate.url),
+      pageId,
       title,
       status: 'analyzed',
       statusLabel: language === 'en' ? 'analyzed' : 'analizada',
@@ -1022,14 +1037,14 @@ async function analyzePage(candidate, language, minWords, minFragmentWords, exac
       level: levelForScore(pageScore, language),
       scoreBasis: 'full_page_text',
       fullTextScore: round1(fullTextScore),
-      contentFingerprint: textFingerprint(pageText),
+      contentFingerprint: processed.contentFingerprint,
       extraction,
       fragments,
     };
   } catch (error) {
     return {
       ...publicCandidate,
-      pageId: buildPageId(candidate.url),
+      pageId: pageId || await buildPageId(candidate.url),
       title: candidate.url,
       status: 'error',
       statusLabel: 'error',
@@ -1041,12 +1056,6 @@ async function analyzePage(candidate, language, minWords, minFragmentWords, exac
       fragments: [],
     };
   }
-}
-
-function textFingerprint(text) {
-  return createHash('sha256')
-    .update(String(text).normalize('NFC').replace(/\s+/g, ' ').trim().toLowerCase())
-    .digest('hex');
 }
 
 function detectDynamicContentSignals(html, words, blockCount) {
@@ -1126,37 +1135,189 @@ function shortPageReason(language, words, htmlChars, renderedFallbackUsed = fals
     : `Página breve: ${words} palabras. Se muestran métricas, pero conviene interpretarlas con cautela.${dynamicHint}${renderedHint}`;
 }
 
-async function fetchHtml(url, timeoutMs = LIMITS.fetchTimeoutMs) {
+async function fetchHtml(url, timeoutMs = LIMITS.fetchTimeoutMs, requestPolicy = {}) {
   return fetchText(url, 'text/html,application/xhtml+xml', (contentType) =>
     !contentType || contentType.includes('text/html') || contentType.includes('application/xhtml')
-  , timeoutMs);
+  , timeoutMs, requestPolicy);
 }
 
-async function fetchText(url, accept, isAllowedContentType = () => true, timeoutMs = LIMITS.fetchTimeoutMs) {
+async function fetchText(url, accept, isAllowedContentType = () => true, timeoutMs = LIMITS.fetchTimeoutMs, requestPolicy = {}) {
   if (timeoutMs <= 0) throw new Error('DISCOVERY_TIME_LIMIT');
-  const controller = new AbortController();
   const budgetMs = Math.min(LIMITS.fetchTimeoutMs, timeoutMs);
+  // A browser request from the public edition reaches this local service over
+  // Private Network Access. Give it a separate transport: each connection is
+  // pinned to an address we have just resolved and checked. This prevents a
+  // DNS-rebinding host from resolving to a public IP during validation and a
+  // private IP when Node opens the connection.
+  if (requestPolicy.publicBridge) {
+    return fetchPublicBridgeText(url, accept, isAllowedContentType, budgetMs);
+  }
   const startedAt = Date.now();
-  try {
-    const response = await awaitWithTimeout(fetch(url, {
-      signal: controller.signal,
+  const target = new URL(url);
+  const maxRedirects = 0;
+  for (let redirects = 0; redirects <= maxRedirects; redirects += 1) {
+    const controller = new AbortController();
+    try {
+      const remainingMs = Math.max(1, budgetMs - (Date.now() - startedAt));
+      const response = await awaitWithTimeout(fetch(target, {
+        signal: controller.signal,
+        headers: {
+          'user-agent': 'WebReadabilityRadar/1.1.0 (+local readability analysis)',
+          accept,
+        },
+        redirect: 'follow',
+      }), remainingMs, () => controller.abort());
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!isAllowedContentType(contentType)) throw new Error('The response content type is not supported.');
+      const text = await awaitWithTimeout(response.text(), Math.max(1, budgetMs - (Date.now() - startedAt)), () => controller.abort());
+      return assertSupportedHtmlSize(text);
+    } finally {
+      controller.abort();
+    }
+  }
+  throw new Error('TOO_MANY_REDIRECTS');
+}
+
+async function fetchPublicBridgeText(value, accept, isAllowedContentType, timeoutMs) {
+  const startedAt = Date.now();
+  let target = await resolvePublicBridgeTarget(value);
+  for (let redirects = 0; redirects <= 4; redirects += 1) {
+    const remainingMs = Math.max(1, timeoutMs - (Date.now() - startedAt));
+    const response = await requestPinnedPublicTarget(target, accept, remainingMs);
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.location;
+      if (!location) throw new Error('REDIRECT_WITHOUT_DESTINATION');
+      target = await resolvePublicBridgeTarget(new URL(Array.isArray(location) ? location[0] : location, target.url).href);
+      continue;
+    }
+    if (response.status < 200 || response.status >= 300) throw new Error(`HTTP ${response.status}`);
+    const contentType = String(response.headers['content-type'] ?? '');
+    if (!isAllowedContentType(contentType)) throw new Error('The response content type is not supported.');
+    return assertSupportedHtmlSize(response.text);
+  }
+  throw new Error('TOO_MANY_REDIRECTS');
+}
+
+function requestPinnedPublicTarget(target, accept, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const { url, address, family } = target;
+    const hostname = url.hostname.replace(/^\[|\]$/g, '');
+    const request = (url.protocol === 'https:' ? httpsRequest : httpRequest)({
+      protocol: url.protocol,
+      hostname,
+      port: url.port || undefined,
+      path: `${url.pathname}${url.search}`,
+      method: 'GET',
+      // Never reuse a socket selected for a previous hostname. The custom
+      // lookup pins this request to the verified public address above.
+      agent: false,
+      lookup: (_name, _options, callback) => callback(null, address, family),
+      ...(url.protocol === 'https:' ? { servername: hostname } : {}),
       headers: {
-        'user-agent': 'WebReadabilityRadar/1.0 (+local readability analysis)',
+        host: url.host,
+        'user-agent': 'WebReadabilityRadar/1.1.0 (+local readability analysis)',
         accept,
       },
-      redirect: 'follow',
-    }), budgetMs, () => controller.abort());
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!isAllowedContentType(contentType)) {
-      throw new Error('The response content type is not supported.');
-    }
-    const remainingMs = Math.max(1, budgetMs - (Date.now() - startedAt));
-    const text = await awaitWithTimeout(response.text(), remainingMs, () => controller.abort());
-    return assertSupportedHtmlSize(text);
-  } finally { controller.abort(); }
+    });
+    let settled = false;
+    const finish = (handler, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      handler(value);
+    };
+    const timer = setTimeout(() => request.destroy(new Error('FETCH_TIMEOUT')), Math.max(1, timeoutMs));
+    request.once('error', error => finish(reject, error));
+    request.once('response', response => {
+      const chunks = [];
+      let byteLength = 0;
+      response.on('data', chunk => {
+        byteLength += chunk.length;
+        // UTF-8 can require up to four bytes per JavaScript character. This
+        // is a strict pre-decode ceiling equivalent to the shared text limit.
+        if (byteLength > MAX_HTML_CHARS * 4) {
+          response.destroy(new Error('PAGE_HTML_TOO_LARGE'));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      response.once('error', error => finish(reject, error));
+      response.once('end', () => finish(resolve, {
+        status: response.statusCode ?? 0,
+        headers: response.headers,
+        text: Buffer.concat(chunks).toString('utf8'),
+      }));
+    });
+    request.end();
+  });
+}
+
+async function assertPublicBridgeUrl(value) {
+  return (await resolvePublicBridgeTarget(value)).url;
+}
+
+async function resolvePublicBridgeTarget(value) {
+  let url;
+  try {
+    url = new URL(String(value));
+  } catch {
+    throw bridgeAddressError();
+  }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || isPrivateBridgeHost(url.hostname) || isBlockedBridgePort(url.port)) {
+    throw bridgeAddressError();
+  }
+  url.hash = '';
+  const hostname = url.hostname.replace(/^\[|\]$/g, '');
+  let addresses;
+  try {
+    addresses = await lookup(hostname, { all: true, verbatim: true });
+  } catch {
+    throw bridgeAddressError();
+  }
+  if (!addresses.length || addresses.some(({ address }) => isPrivateBridgeAddress(address))) {
+    throw bridgeAddressError();
+  }
+  // `lookup` reports the address family, which lets requestPinnedPublicTarget
+  // bypass a second DNS lookup without weakening TLS hostname validation.
+  return { url, address: addresses[0].address, family: addresses[0].family };
+}
+
+function bridgeAddressError() {
+  return Object.assign(new Error('The public web edition can only retrieve public http(s) addresses.'), { statusCode: 400 });
+}
+
+function isPrivateBridgeHost(hostname) {
+  const host = String(hostname).toLowerCase().replace(/^\[|\]$/g, '');
+  return host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || isPrivateBridgeAddress(host);
+}
+
+function isPrivateBridgeAddress(value) {
+  const address = String(value).toLowerCase().replace(/^\[|\]$/g, '');
+  if (isIP(address) === 4) {
+    const [first, second, third] = address.split('.').map(Number);
+    return first === 0 || first === 10 || first === 127 ||
+      (first === 100 && second >= 64 && second <= 127) ||
+      (first === 169 && second === 254) ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 0 && third === 0) ||
+      (first === 192 && second === 0 && third === 2) ||
+      (first === 192 && second === 168) ||
+      (first === 198 && (second === 18 || second === 19)) ||
+      (first === 198 && second === 51 && third === 100) ||
+      (first === 203 && second === 0 && third === 113) ||
+      first >= 224;
+  }
+  if (isIP(address) !== 6) return false;
+  if (address === '::' || address === '::1' || /^f[cd]/i.test(address) || /^fe[89ab]/i.test(address) || /^ff/i.test(address) || /^2001:db8:/i.test(address)) return true;
+  const mapped = address.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  return mapped ? isPrivateBridgeAddress(mapped[1]) : false;
+}
+
+function isBlockedBridgePort(port) {
+  if (!port) return false;
+  const number = Number(port);
+  return !Number.isInteger(number) || number < 1 || number > 65535 || BLOCKED_BRIDGE_PORTS.has(number);
 }
 
 function awaitWithTimeout(promise, timeoutMs, onTimeout) {
@@ -1172,7 +1333,8 @@ function awaitWithTimeout(promise, timeoutMs, onTimeout) {
   });
 }
 
-async function fetchRenderedHtml(url, timeoutMs = LIMITS.fetchTimeoutMs + 8000) {
+async function fetchRenderedHtml(url, timeoutMs = LIMITS.fetchTimeoutMs + 8000, requestPolicy = {}) {
+  if (requestPolicy.publicBridge) return '';
   const browserPath = findLocalBrowser();
   if (!browserPath) return '';
   // A private browser profile per render avoids Chromium's profile lock when
@@ -1203,10 +1365,7 @@ async function fetchRenderedHtml(url, timeoutMs = LIMITS.fetchTimeoutMs + 8000) 
 }
 
 function assertSupportedHtmlSize(html) {
-  if (String(html).length > LIMITS.maxHtmlChars) {
-    throw new Error('PAGE_HTML_TOO_LARGE');
-  }
-  return html;
+  return readabilityCore.assertSupportedHtmlSize(html);
 }
 
 function findLocalBrowser() {
@@ -1257,9 +1416,9 @@ function findExecutableOnPath(names) {
   return '';
 }
 
-async function fetchRobotsPolicy(origin, timeoutMs = LIMITS.fetchTimeoutMs) {
+async function fetchRobotsPolicy(origin, timeoutMs = LIMITS.fetchTimeoutMs, requestPolicy = {}) {
   try {
-    const text = await fetchText(new URL('/robots.txt', origin).href, 'text/plain,*/*', () => true, timeoutMs);
+    const text = await fetchText(new URL('/robots.txt', origin).href, 'text/plain,*/*', () => true, timeoutMs, requestPolicy);
     return parseRobotsTxt(text);
   } catch {
     return { available: false, sitemapUrls: [], isAllowed: () => true };
@@ -1298,7 +1457,7 @@ function parseRobotsTxt(text) {
   };
 }
 
-async function discoverSitemapLinks(origin, declaredSitemaps, scope, robots, deadline = Infinity) {
+async function discoverSitemapLinks(origin, declaredSitemaps, scope, robots, deadline = Infinity, requestPolicy = {}) {
   const queue = uniqueUrlStrings([
     new URL('/sitemap.xml', origin).href,
     new URL('/sitemap_index.xml', origin).href,
@@ -1313,7 +1472,7 @@ async function discoverSitemapLinks(origin, declaredSitemaps, scope, robots, dea
     if (visitedSitemaps.has(sitemapKey)) continue;
     visitedSitemaps.add(sitemapKey);
     try {
-      const xml = await fetchText(sitemapUrl, 'application/xml,text/xml,*/*', () => true, Math.max(1, deadline - Date.now()));
+      const xml = await fetchText(sitemapUrl, 'application/xml,text/xml,*/*', () => true, Math.max(1, deadline - Date.now()), requestPolicy);
       for (const href of extractSitemapLocs(xml)) {
         let url;
         try { url = canonicalUrl(href); } catch { continue; }
@@ -1424,125 +1583,19 @@ function extractLinks(html, baseUrl) {
 }
 
 function extractTitle(html) {
-  const title = findHtmlNodes(parseHtmlDocument(html), 'title')[0];
-  return title ? cleanText(nodeText(title)).slice(0, 160) : '';
+  return readabilityCore.extractTitle(html);
 }
 
 function extractVisibleText(html) {
-  return cleanText(nodeText(parseHtmlDocument(html)));
+  return readabilityCore.extractVisibleText(html);
 }
 
 function extractTextBlocks(html) {
-  // A fragment is a complete semantic paragraph, never a sentence-sized slice or a visual card.
-  return findHtmlNodes(parseHtmlDocument(html), 'p').map(node => cleanText(nodeText(node))).filter(Boolean);
-}
-
-function parseHtmlDocument(html) {
-  const root = { tag: '#document', children: [] };
-  const stack = [root];
-  const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
-  const rawTags = new Set(['script', 'style', 'noscript', 'svg', 'template']);
-  let index = 0;
-  const appendText = value => { if (value) stack.at(-1).children.push({ text: value }); };
-  while (index < html.length) {
-    if (html.startsWith('<!--', index)) { index = html.indexOf('-->', index + 4); index = index < 0 ? html.length : index + 3; continue; }
-    if (html[index] !== '<') {
-      const end = html.indexOf('<', index);
-      appendText(html.slice(index, end < 0 ? html.length : end));
-      index = end < 0 ? html.length : end;
-      continue;
-    }
-    let end = index + 1, quote = '';
-    while (end < html.length) {
-      const character = html[end];
-      if (quote) { if (character === quote) quote = ''; }
-      else if (character === '"' || character === "'") quote = character;
-      else if (character === '>') break;
-      end += 1;
-    }
-    if (end >= html.length) { appendText(html.slice(index)); break; }
-    const token = html.slice(index + 1, end).trim();
-    index = end + 1;
-    if (!token || token.startsWith('!') || token.startsWith('?')) continue;
-    if (token.startsWith('/')) {
-      const closing = token.slice(1).trim().toLowerCase();
-      for (let cursor = stack.length - 1; cursor > 0; cursor -= 1) {
-        if (stack[cursor].tag === closing) { stack.length = cursor; break; }
-      }
-      continue;
-    }
-    const tag = token.split(/[\s/>]/, 1)[0].toLowerCase();
-    if (!tag) continue;
-    const node = { tag, children: [] };
-    stack.at(-1).children.push(node);
-    if (rawTags.has(tag)) {
-      const closing = `</${tag}`;
-      const lower = html.toLowerCase();
-      const closeAt = lower.indexOf(closing, index);
-      index = closeAt < 0 ? html.length : (html.indexOf('>', closeAt) + 1 || html.length);
-      continue;
-    }
-    if (!voidTags.has(tag) && !token.endsWith('/')) stack.push(node);
-  }
-  return root;
-}
-
-function findHtmlNodes(root, tag) {
-  const nodes = [];
-  // A header can be a page hero with real prose. Navigation remains excluded independently.
-  const excluded = new Set(['script', 'style', 'noscript', 'svg', 'template', 'nav', 'footer', 'aside', 'form', 'dialog']);
-  const visit = (node, excludedAncestor = false) => {
-    if (!node.tag) return;
-    const hidden = excludedAncestor || excluded.has(node.tag);
-    if (node.tag === tag && !hidden) nodes.push(node);
-    for (const child of node.children ?? []) visit(child, hidden);
-  };
-  visit(root);
-  return nodes;
-}
-
-function nodeText(node, excludedAncestor = false) {
-  if (node.text !== undefined) return excludedAncestor ? '' : decodeEntities(node.text);
-  const excluded = new Set(['script', 'style', 'noscript', 'svg', 'template', 'nav', 'footer', 'aside', 'form', 'dialog']);
-  const hidden = excludedAncestor || excluded.has(node.tag);
-  return (node.children ?? []).map(child => nodeText(child, hidden)).join(' ');
-}
-
-function cleanText(text) {
-  const normalized = decodeEntities(text)
-    .replace(/\s+/g, ' ')
-    .replace(/\s+([,.;:!?])/g, '$1');
-  // A trailing image credit is page metadata, not prose for a readability score.
-  return normalized
-    .replace(/\s*[\[(]\s*(?:imagen|foto|fotograf[ií]a|image|photo|cr[eé]dito|fuente)\s*:\s*[^\])]+[\])]\s*$/iu, '')
-    .trim();
+  return readabilityCore.extractTextBlocks(html);
 }
 
 function decodeEntities(text) {
-  const entities = {
-    amp: '&',
-    lt: '<',
-    gt: '>',
-    quot: '"',
-    apos: "'",
-    nbsp: ' ',
-    aacute: 'á',
-    eacute: 'é',
-    iacute: 'í',
-    oacute: 'ó',
-    uacute: 'ú',
-    ntilde: 'ñ',
-    Aacute: 'Á',
-    Eacute: 'É',
-    Iacute: 'Í',
-    Oacute: 'Ó',
-    Uacute: 'Ú',
-    Ntilde: 'Ñ',
-  };
-  return String(text)
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
-    .replace(/&([a-zA-Z]+);/g, (full, name) => entities[name] ?? full);
+  return readabilityCore.decodeEntities(text);
 }
 
 function boundedInteger(input, fallback, minimum, maximum, label) {
@@ -1563,247 +1616,36 @@ function selectHardestFragments(fragments, limit) {
   return [...unique.values()].sort(compareFragmentDifficulty).slice(0, limit);
 }
 
-function deduplicateFragments(fragments) {
-  const seen = new Set();
-  return fragments.filter((fragment) => {
-    const key = String(fragment.text).normalize('NFC').replace(/\s+/g, ' ').trim().toLocaleLowerCase('es');
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function spanishTokens(text) {
-  // Decimal groups remain one number; punctuation still delimits sentence segments.
-  const tokens = String(text).normalize('NFC').toLowerCase().match(/\b(?:v\.g|p\.ej)(?=\.|\s|$)|\p{L}+(?:[-'\u2010\u2011]\p{L}+)*|\p{N}+(?:[.,]\p{N}+)*|[\p{Sc}\p{Sm}%@#&\u2030\u00a7\u00a9\u00ae]/gu) ?? [];
-  const abbreviations = new Set(['sr','sra','srta','dr','dra','av','avda','etc','fig','vg','v','g','pta','ptas','p','pag','pág','pags','págs','ud','uds','d','dña','prof','profa','núm','num']);
-  return tokens.map(token => ({ text: token,
-    syllables: !/\p{L}/u.test(token) || abbreviations.has(token) || ['v.g','p.ej'].includes(token) ? 1 : countSpanishSyllables(token.replace(/[\u2010\u2011]/g, '-')) }));
-}
-
 function textStats(text, language) {
-  if (language !== 'en') {
-    const tokens = spanishTokens(text);
-    const sentences = spanishSentenceSegments(text).length;
-    return { words: tokens.length, sentences, syllables: tokens.reduce((sum, token) => sum + token.syllables, 0) };
-  }
-  const words = englishTokens(text);
-  const sentenceCount = Math.max(1, (text.match(/[.!?]+(\s|$)/g) ?? []).length);
-  const syllables = words.reduce((sum, word) => sum + countSyllables(word, language), 0);
-  return {
-    words: words.length,
-    sentences: sentenceCount,
-    syllables: Math.max(syllables, words.length),
-  };
-}
-
-function spanishSentenceSegments(text) {
-  // Domains, URLs and decimal values contain periods or commas that are not sentence boundaries.
-  const protectedText = String(text)
-    .replace(/\b(?:https?:\/\/|www\.)[^\s<>()]+/giu, ' enlace ')
-    .replace(/\b[\p{L}\p{N}_-]+(?:\.[\p{L}\p{N}_-]+)+\b/gu, ' dominio ')
-    .replace(/\b\p{N}+(?:[.,]\p{N}+)+\b/gu, ' número ');
-  return protectedText
-    .split(/[.;:¿?¡!\u2014]+/u)
-    .filter(segment => spanishTokens(segment).length > 0);
+  return readabilityCore.textStats(text, language);
 }
 
 function detectTextLanguage(text) {
-  const words = (text.toLowerCase().match(/[a-záéíóúüñàèìòùâêîôûäëïöüç]+(?:['-][a-záéíóúüñàèìòùâêîôûäëïöüç]+)?/gi) ?? [])
-    .map((word) => word.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
-    .filter((word) => word.length > 1);
-  if (!words.length) return 'unknown';
-
-  const samples = new Set(words.slice(0, 180));
-  const hasSpanishChars = /[áéíóúüñ¿¡]/i.test(text);
-  const hasFrenchChars = /[àâæçéèêëîïôœùûüÿ]/i.test(text);
-  const dictionaries = {
-    es: ['de', 'la', 'el', 'los', 'las', 'que', 'en', 'y', 'del', 'para', 'con', 'una', 'por', 'universidad', 'estudiantes', 'investigacion', 'formacion'],
-    en: ['the', 'and', 'of', 'to', 'in', 'for', 'with', 'that', 'this', 'are', 'is', 'students', 'research', 'university', 'education', 'through'],
-    fr: ['de', 'la', 'le', 'les', 'des', 'du', 'et', 'en', 'pour', 'avec', 'une', 'dans', 'est', 'universite', 'recherche', 'enseignement', 'etudiants'],
-  };
-  const scores = Object.fromEntries(
-    Object.entries(dictionaries).map(([lang, markers]) => [lang, markers.filter((marker) => samples.has(marker)).length]),
-  );
-
-  if (hasSpanishChars) scores.es += 2;
-  if (hasFrenchChars) scores.fr += 2;
-  if (/\b(the|and|of|to|with|through|research|students|university)\b/i.test(text)) scores.en += 2;
-  if (/\b(el|los|las|que|para|universidad|estudiantes|investigacion)\b/i.test(text)) scores.es += 2;
-  if (/\b(le|les|des|dans|universite|recherche|enseignement|etudiants)\b/i.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))) scores.fr += 2;
-
-  const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-  if (ranked[0][1] === 0 || ranked[0][1] === ranked[1][1]) return 'unknown';
-  return ranked[0][0];
+  return readabilityCore.detectTextLanguage(text);
 }
 
 function countSyllables(word, language) {
-  if (language !== 'en') return countSpanishSyllables(word);
-  return countEnglishSyllables(word);
-}
-
-function englishTokens(text) {
-  return String(text).match(/(?:[A-Za-z](?:\.[A-Za-z])+(?:\.)?|[A-Za-z]+(?:['’\-][A-Za-z]+)*|\d+(?:[.,]\d+)*)/g) ?? [];
-}
-
-function countEnglishSyllables(word) {
-  const normalized = normalizeEnglishToken(word);
-  if (!normalized) return 0;
-  const cache = globalThis.ENGLISH_SYLLABLE_CACHE ?? (globalThis.ENGLISH_SYLLABLE_CACHE = new Map());
-  if (cache.has(normalized)) return cache.get(normalized);
-
-  const result = resolveEnglishSyllables(normalized, /^[A-Z]{2,8}$/.test(String(word)));
-  cache.set(normalized, result);
-  return result;
+  return readabilityCore.countSyllables(word, language);
 }
 
 function englishSyllableSource(word) {
-  const normalized = normalizeEnglishToken(word);
-  if (!normalized) return 'none';
-  if (/^\d+(?:[.,]\d+)*$/.test(normalized)) return 'numeric';
-  if (englishDictionaryCounts(normalized)
-    ?? englishDictionaryCounts(normalized.replace(/'s$/, ''))
-    ?? englishDictionaryCounts(normalized.replace(/s'$/, 's'))) return 'cmudict';
-  if (normalized.includes('-')) {
-    const sources = normalized.split('-').filter(Boolean).map(englishSyllableSource);
-    return sources.every((source) => source === 'cmudict') ? 'cmudict_compound' : 'heuristic';
-  }
-  if (/^[a-z](?:\.[a-z])+(?:\.)?$/.test(normalized) || /^[A-Z]{2,8}$/.test(String(word))) return 'acronym';
-  return 'heuristic';
-}
-
-function normalizeEnglishToken(word) {
-  const normalized = String(word)
-    .normalize('NFC')
-    .replace(/[’]/g, "'")
-    .toLowerCase();
-  if (/^[a-z](?:\.[a-z])+\.$/.test(normalized)) return normalized;
-  return normalized.replace(/^[^a-z0-9']+|[^a-z0-9']+$/g, '');
-}
-
-function englishDictionaryCounts(word) {
-  const entries = globalThis.ENGLISH_SYLLABLE_DICTIONARY;
-  const counts = entries?.[word];
-  return Array.isArray(counts) && counts.length ? counts : null;
-}
-
-function resolveEnglishSyllables(word, uppercaseAcronym = false) {
-  if (/^\d+(?:[.,]\d+)*$/.test(word)) return 1;
-
-  const counts = englishDictionaryCounts(word)
-    ?? englishDictionaryCounts(word.replace(/'s$/, ''))
-    ?? englishDictionaryCounts(word.replace(/s'$/, 's'));
-  // CMUdict order is the documented deterministic pronunciation policy.
-  if (counts) return counts[0];
-
-  if (word.includes('-')) {
-    return word.split('-').filter(Boolean).reduce((sum, part) => sum + resolveEnglishSyllables(part), 0);
-  }
-
-  if (/^[a-z](?:\.[a-z])+(?:\.)?$/.test(word)) {
-    return [...word.replace(/\./g, '')].reduce((sum, letter) => sum + acronymLetterSyllables(letter), 0);
-  }
-
-  if (uppercaseAcronym && /^[a-z]{2,8}$/.test(word)) {
-    return [...word].reduce((sum, letter) => sum + acronymLetterSyllables(letter), 0);
-  }
-
-  return heuristicEnglishSyllables(word);
-}
-
-function acronymLetterSyllables(letter) {
-  return {a:1,b:1,c:1,d:1,e:1,f:1,g:1,h:1,i:1,j:1,k:1,l:1,m:1,n:1,o:1,p:1,q:1,r:1,s:1,t:1,u:1,v:1,w:3,x:1,y:1,z:1}[letter] ?? 1;
-}
-
-function heuristicEnglishSyllables(word) {
-  let token = word.replace(/'s$|s'$/g, '').replace(/[^a-z]/g, '');
-  if (!token) return 1;
-  if (token.length <= 3) return 1;
-
-  let count = (token.match(/[aeiouy]+/g) ?? []).length;
-  if (/e$/.test(token) && !/(?:[^aeiou]le|[^aeiou]ye)$/.test(token)) count--;
-  if (/(?:[^aeiou]ed)$/.test(token) && !/(?:ted|ded)$/.test(token)) count--;
-  if (/(?:[^sxz]|ch|sh)es$/.test(token) && !/(?:ches|shes|ses|xes|zes|ges|ces)$/.test(token)) count--;
-  if (/(?:ia|io|eo|ua|ui|iu)/.test(token)) count++;
-  if (/^mc/.test(token)) count++;
-  return Math.max(1, count);
-}
-
-function normalizeSpanishSyllableToken(word) {
-  return String(word).normalize('NFC').toLowerCase().replace(/[^a-záéíóúüñ'-]/g, '');
-}
-
-function spanishDictionarySyllables(word) {
-  const count = globalThis.SPANISH_SYLLABLE_DICTIONARY?.[word];
-  return Number.isInteger(count) && count > 0 ? count : null;
+  return readabilityCore.englishSyllableSource(word);
 }
 
 function spanishSyllableSource(word) {
-  const normalized = normalizeSpanishSyllableToken(word);
-  if (!normalized) return 'none';
-  return spanishDictionarySyllables(normalized) === null ? 'heuristic' : 'pylabeador';
-}
-
-function countSpanishSyllables(word) {
-  const normalized = normalizeSpanishSyllableToken(word);
-  if (!normalized) return 0;
-  const cache = globalThis.SPANISH_SYLLABLE_CACHE ?? (globalThis.SPANISH_SYLLABLE_CACHE = new Map());
-  if (cache.has(normalized)) return cache.get(normalized);
-  const result = spanishDictionarySyllables(normalized) ?? heuristicSpanishSyllables(normalized);
-  cache.set(normalized, result);
-  return result;
-}
-
-function heuristicSpanishSyllables(word) {
-  // Preserve stress marks: stripping them merges hiatuses such as pa-is and di-a.
-  const parts = String(word).normalize('NFC').toLowerCase().split(/[-']/);
-  return parts.reduce((total, part) => {
-    const normalized = part.replace(/[^a-záéíóúüñ]/g, '')
-      .replace(/([qg])u(?=[eéií])/g, '$1')
-      .replace(/y$/g, 'i');
-    if (!normalized) return total;
-    const runs = normalized.match(/[aeiouáéíóúü](?:h?[aeiouáéíóúü])*/g) ?? [];
-    const base = vowel => vowel.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const open = vowel => /[aeoáéó]/.test(vowel);
-    const weak = vowel => /[iuü]/.test(vowel);
-    const diphthong = (a, b) => base(a) !== base(b)
-      && !(open(a) && open(b))
-      && !((open(a) && /[íú]/.test(b)) || (/[íú]/.test(a) && open(b)));
-    let count = 0;
-    for (const run of runs) {
-      const vowels = run.replace(/h/g, '');
-      for (let i = 0; i < vowels.length;) {
-        if (i + 2 < vowels.length && weak(vowels[i]) && open(vowels[i + 1]) && weak(vowels[i + 2])) i += 3;
-        else if (i + 1 < vowels.length && diphthong(vowels[i], vowels[i + 1])) i += 2;
-        else i += 1;
-        count += 1;
-      }
-    }
-    return total + Math.max(1, count);
-  }, 0);
+  return readabilityCore.spanishSyllableSource(word);
 }
 
 function readabilityScore(stats, language) {
-  if (!stats.words || !stats.sentences) return 0;
-  const wordsPerSentence = stats.words / stats.sentences;
-  const syllablesPerWord = stats.syllables / stats.words;
-
-  if (language === 'en') {
-    return Math.min(100, 206.835 - 1.015 * wordsPerSentence - 84.6 * syllablesPerWord);
-  }
-
-  return Math.min(100, 206.835 - 62.3 * syllablesPerWord - wordsPerSentence);
+  return readabilityCore.readabilityScore(stats, language);
 }
 
 function classificationRules(language) {
-  const rows = language === 'en'
-    ? [[90,'Very easy','green'],[80,'Easy','green'],[70,'Fairly easy','lime'],[60,'Plain English','amber'],[50,'Fairly difficult','orange'],[30,'Difficult','red'],[null,'Very difficult','red']]
-    : [[80,'Muy fácil','green'],[65,'Bastante fácil','lime'],[55,'Normal','amber'],[40,'Algo difícil','orange'],[null,'Muy difícil','red']];
-  return rows.map(([minimum,label,color]) => ({minimum,label,color}));
+  return readabilityCore.classificationRules(language);
 }
 
 function levelForScore(score, language) {
-  return classificationRules(language).find(row => row.minimum === null || score >= row.minimum).label;
+  return readabilityCore.levelForScore(score, language);
 }
 
 function uniqueByUrl(items) {
@@ -1835,13 +1677,7 @@ function uniqueUrlStrings(urls) {
 }
 
 function normalizeUrlKey(url) {
-  try {
-    const normalized = canonicalUrl(url);
-    normalized.pathname = normalized.pathname.replace(/\/+$/, '') || '/';
-    return normalized.href;
-  } catch {
-    return String(url).replace(/\/$/, '');
-  }
+  return readabilityCore.normalizeUrlKey(url);
 }
 
 function safeLocalHtmlName(name) {
@@ -1854,24 +1690,15 @@ function clamp(value, min, max) {
 }
 
 function round1(value) {
-  return Math.round(value * 10) / 10;
+  return readabilityCore.round1(value);
 }
 
-function buildPageId(url) {
-  return `P-${shortHash(normalizeUrlKey(url))}`;
+async function buildPageId(url) {
+  return readabilityCore.buildPageId(url);
 }
 
-function buildFragmentId(url, index, text) {
-  return `${buildPageId(url)}-F${String(index + 1).padStart(4, '0')}-${shortHash(text)}`;
-}
-
-function shortHash(value) {
-  let hash = 2166136261;
-  for (const char of String(value)) {
-    hash ^= char.codePointAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
+async function buildFragmentId(url, index, text) {
+  return readabilityCore.buildFragmentId(url, index, text);
 }
 
 function readableError(message, language = 'en') {
@@ -1883,14 +1710,4 @@ function readableError(message, language = 'en') {
   if (/abort/i.test(message)) return 'Request timed out.';
   if (/fetch failed/i.test(message)) return 'Could not connect to the website.';
   return message;
-}
-
-function sendDemo(response, language) {
-  const isEnglish = language === 'en';
-  const title = isEnglish ? 'Plain language demo page' : 'Página de ejemplo de lectura clara';
-  const body = isEnglish
-    ? 'This page contains a short paragraph written in plain English. It is intended to test the local readability analyzer. Short sentences usually improve the Flesch Reading Ease score. Longer sentences with technical terms can make a text harder to read and understand.'
-    : 'Esta página contiene un párrafo breve escrito en lenguaje claro. Sirve para probar el analizador local de lecturabilidad. Las frases cortas suelen facilitar la lectura. Los textos largos y técnicos pueden resultar más difíciles de comprender.';
-  response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-  response.end(`<!doctype html><html lang="${language}"><head><title>${title}</title></head><body><main><h1>${title}</h1><p>${body}</p><p>${body}</p></main></body></html>`);
 }

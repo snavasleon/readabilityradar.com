@@ -6,8 +6,10 @@
   "proofing_language": "English (United States)",
   "language_id": 1033,
   "metric": "Flesch Reading Ease",
-  "generated_at": "2026-10-19T15:43:55.975550+00:00",
-  "radar_server_sha256": "c9fdf25d76b748d8894dfbd82dfa5078ba690b9441b99485b321dd36809d7b4a",
+  "generated_at": "2026-11-23T10:28:23.934077+00:00",
+  "radar_server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+  "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
+  "processing_sha256": "1d3c90bdd51c6681cfc67dc1af1ba1caeaab0e27663d77dadd45a8d94986d1ec",
   "corpus_sha256": "ccc16e912bf20166a550917addbe9a1870383d4e8cdc9eb04c13e7f294187723",
   "groups": [
     {
@@ -136,22 +138,44 @@
     "texts_total": 100,
     "texts_compared": 100,
     "external_errors": 0,
-    "mean_radar_score": 33.856382605684146,
-    "mean_inflesz_score": 34.0312,
-    "mean_signed_difference": -0.1748173943158518,
-    "mean_absolute_difference": 1.0048311952967646,
+    "mean_radar_score": 33.85638260568414,
+    "mean_inflesz_score": 34.031200000000005,
+    "mean_signed_difference": -0.1748173943158515,
+    "mean_absolute_difference": 1.0048311952967643,
     "pearson_correlation": 0.9987876535385443,
     "lins_concordance_correlation": 0.9986401766851591,
     "category_agreement": 0.96,
     "same_category_count": 96,
     "category_mismatches": [
-      { "text_id": "EASY-018", "radar_score": 78.4, "inflesz_score": 81.04, "threshold": 80 },
-      { "text_id": "EASY-024", "radar_score": 81.2, "inflesz_score": 78.35, "threshold": 80 },
-      { "text_id": "EASY-027", "radar_score": 56.9, "inflesz_score": 53.76, "threshold": 55 },
-      { "text_id": "EASY-042", "radar_score": 81.8, "inflesz_score": 78.68, "threshold": 80 }
+      {
+        "text_id": "EASY-018",
+        "radar_score": 78.4,
+        "inflesz_score": 81.04,
+        "threshold": 80
+      },
+      {
+        "text_id": "EASY-024",
+        "radar_score": 81.2,
+        "inflesz_score": 78.35,
+        "threshold": 80
+      },
+      {
+        "text_id": "EASY-027",
+        "radar_score": 56.9,
+        "inflesz_score": 53.76,
+        "threshold": 55
+      },
+      {
+        "text_id": "EASY-042",
+        "radar_score": 81.8,
+        "inflesz_score": 78.68,
+        "threshold": 80
+      }
     ],
     "external_unavailable": [],
-    "generated_at": "2026-10-19T22:11:06Z",
-    "radar_server_sha256": "2c60eecd11ff932a9a43cd3e911a5f3e98e4f82867d2ba6bb27176ce71d40186"
+    "generated_at": "2026-11-23T10:28:23.624Z",
+    "radar_server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+    "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
+    "processing_sha256": "ee3ded23ee1f87418fc6192eaaa5ecabc07197c4e01b3c8f48df8e40683e03e7"
   }
 }

@@ -1,11 +1,15 @@
 {
   "name": "web-readability-radar",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "build:windows": "pkg . --target node24-win-x64 --output dist/Web-Readability-Radar.exe"
+    "build:windows": "pkg . --target node24-win-x64 --output dist/Web-Readability-Radar.exe",
+    "test:processing": "node validation/technical/test-processing.mjs",
+    "test:edition-parity": "node validation/technical/test-edition-parity.mjs",
+    "test:bridge-security": "node validation/technical/test-local-bridge-security.mjs",
+    "test": "npm run test:processing && npm run test:edition-parity && npm run test:bridge-security"
   },
   "bin": "server.mjs",
   "engines": {

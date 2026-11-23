@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use Web Readability Radar, please cite the tagged release."
+title: "Web Readability Radar"
+version: "1.1.0"
+date-released: 2026-11-23
+type: software
+license: MIT
+repository-code: "https://github.com/snavasleon/readabilityradar.com"
+url: "https://readabilityradar.com"
+authors:
+  - family-names: "Navas-León"
+    given-names: "Sergio"
+  - family-names: "Duñabeitia"
+    given-names: "Jon Andoni"

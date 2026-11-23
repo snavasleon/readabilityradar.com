@@ -1,5 +1,7 @@
 {
-  "server_sha256": "34ba86de63f533fb8db625ade59a9e725b59502e624afa4fdf0df0b1dc8c1409",
+  "server_sha256": "50222ebf0f8886182c0e7f04cdb3202786e17e6e28e54a49202d0c9750892ad1",
+  "core_sha256": "4b39dd68762c5b631b986bc9558e5dedb291ef0e32ff10868f05d874cc51e7d1",
+  "processing_sha256": "1d3c90bdd51c6681cfc67dc1af1ba1caeaab0e27663d77dadd45a8d94986d1ec",
   "records": [
     {
       "text_id": "EASY-001",
